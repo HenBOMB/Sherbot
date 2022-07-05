@@ -1,0 +1,25 @@
+const { MessageEmbed } = require('discord.js');
+const PuzzleLibrary = require('./puzzle_library_util.js');
+
+var puzzle;
+
+module.exports =
+{
+    commands:['brainteaser', 'braintease', 'bt'],
+
+	execute : async function (message, embed, args) 
+    {
+        puzzle.send(message.channel, args);
+    },
+
+    initialize : function(client, con, data)
+    {
+        const embed = new MessageEmbed()
+            .setThumbnail('https://media.discordapp.net/attachments/910948176054341673/910948197210415105/170659_1.png')
+            .setColor('c45819');
+        puzzle = new PuzzleLibrary('https://www.riddles.com/brain-teasers?page=','brainteaser', embed, 29);
+        return true;
+    },
+
+    interact : i => puzzle.interact(i)
+};

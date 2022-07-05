@@ -1,0 +1,6 @@
+10+10 and 11+11 can give you the same answer.
+
+Explain how?
+
+Answer: Round of to nearest 100 (ceil/floor)
+

@@ -1,0 +1,28 @@
+steam regex may be incorrect due to json string thingy
+
+location: (also go with country and not city <-- update that)
+    - steam (done, returns other stuff too tho)
+    - mercado libre (done)
+    - duolingo (undone)
+    - freelancer (city = city&q) (done)
+    - deviantart (this returns a lot of information) (done)
+    - osu (done)
+
+date joined: (none added)
+    - gamespot (https://www.gamespot.com/profile/henbomb/)
+    - freelancer (https://www.freelancer.com/u/henbomb)
+    - flickr (https://www.flickr.com/people/henbomb)
+    - lichess (https://lichess.org/@/henbomb)
+    - twitter ( https://twitter.com/henbomb)
+    - osu (https://osu.ppy.sh/users/henbomb)
+    - reddit (https://www.reddit.com/user/henbomb)
+    - roblox (https://www.roblox.com/user.aspx?username=henbomb)
+    - freesound (https://freesound.org/people/henbomb/)
+
+name
+    - steam (me)
+    - instagram (me)
+    - freelancer? (me)
+    - kik? (me)
+    - wattpad? (https://www.wattpad.com/user/VanillaSandPaper (me))
+    - mixcloud (https://www.mixcloud.com/PNG/)
