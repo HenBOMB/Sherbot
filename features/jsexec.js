@@ -34,11 +34,16 @@ module.exports =
         if(cmd == 'sql')
         {
             code = `
-            return await new Promise((resolve) => {
-                connection.query(\"${code}\", (err, res) => { 
-                    resolve(res.length == 1? res[0] : res);
+            try{
+                return await new Promise((resolve) => {
+                    connection.query(\"${code}\", (err, res) => { 
+                        resolve(res.length == 1? res[0] : res);
+                    })
                 })
-            })
+            }
+            catch(e){
+                return e
+            }
             `
         }
 

@@ -1,7 +1,5 @@
 const fs = require("fs");
 
-const clone = false;
-
 // // // // // // // // // // // // // // // // // // // // // //
 
 const { Collection, Client, Intents } = require('discord.js');
@@ -70,8 +68,6 @@ client.once('ready', async () => {
 				const name = subfile.slice(0,-3);
 				client.commands.set(name, require(`./commands/${file}/${subfile}`));
 				client.commands.get(name).name = name;
-				if(clone)
-					client.commands.get(name).commands[0] = client.commands.get(name).commands[0]+"_";
 				paths.set(name, `./commands/${file}/${subfile}`);
 			}
 			continue;
@@ -80,8 +76,6 @@ client.once('ready', async () => {
 		const name = file.slice(0,-3);
 		client.commands.set(name, require(`./commands/${file}`));
 		client.commands.get(name).name = name;
-		if(clone)
-			client.commands.get(name).commands[0] = client.commands.get(name).commands[0]+"_";
 		paths.set(name, `./commands/${file}`);
 	}
 
@@ -114,15 +108,12 @@ client.once('ready', async () => {
 
 		// Done
 
-		if(clone)
-			console.log("- bot online (clone)")
-		else
-			console.log("- bot online");
+		console.log("- bot online");
 	});
 });
 
 client.on('guildMemberAdd', async member => {
-	if(clone || member.guild.id != '670107546480017409') return;
+	if(member.guild.id != '670107546480017409') return;
 	
 	let welcome = RandomItem(welcomes);
 	welcome = welcome.replace(/{user}/g, member.user.username);
@@ -157,11 +148,7 @@ client.on('messageCreate', async message =>{
 
 	client.features.each(feature => {
 		if(feature.tick == undefined) return;
-		try {
-			feature.tick(message, connection);
-		} catch (error) {
-			feature.tick(message);
-		}
+		feature.tick(message);
 	});
 
 	ExecuteCommands(message);
