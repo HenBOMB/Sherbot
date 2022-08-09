@@ -16,13 +16,9 @@ module.exports =
 ✕ Rock Paper Scissors Cellular Automata
 \`8ball [text]\`
 ✕ Sassy 8ball (uses a neural net to generate answers)
-\`idlookup [uid]\`
-⬥ Looks up a discord user's id and returns some info on it.
-\`sherlock [username]\`
-⬥ Hunt down social media accounts by username across social networks. Hacking tool made by me in javascript (Was inspired by the original python version)\n*(request permission to use)**
 
 **Puzzles**
-\`riddle\`, \`math\`, \`whatami\`, \`whatisit\`, \`whoami\`
+\`puzzle\`, \`riddle\`
 
 **Translators**
 \`norse [text]\`

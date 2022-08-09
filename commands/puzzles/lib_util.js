@@ -28,14 +28,14 @@ class PuzzleLibrary
 
     async interact(interaction)
     {
-        const index = parseInt(interaction.customId.slice(this.id.length));
+        const index = parseInt(interaction.customId.split(':')[1]);
         const embed = new MessageEmbed().setColor(this.embed.color);
         var cache = this.cache.get(index);
 
         if(cache === undefined)
         {
             embed.setDescription('Fetching answer...');
-
+            
             interaction.reply({ embeds: [embed], ephemeral: true  }).then(async i => {
             
                 cache = await PuzzleUtils.findRiddle(this.uri, index);

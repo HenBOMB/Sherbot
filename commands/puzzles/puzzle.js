@@ -31,11 +31,9 @@ module.exports =
 
     initialize : function(client, con, data)
     {
-        const embed = new MessageEmbed()
-            .setThumbnail('https://cdn3.iconfinder.com/data/icons/brain-games/1042/Puzzle-grey.png')
-            .setColor('RANDOM');
+        const embed = new MessageEmbed().setColor('RANDOM');
 
-        puzzles.push(new PuzzleLibrary('logic', embed, 10));
+        puzzles.push(new PuzzleLibrary('logic-puzzles', embed, 10));
         puzzles.push(new PuzzleLibrary('what-am-i-riddles', embed, 3));
         puzzles.push(new PuzzleLibrary('who-is-it-riddles', embed, 3));
         puzzles.push(new PuzzleLibrary('who-am-i-riddles', embed, 3));
@@ -48,24 +46,26 @@ module.exports =
         return true;
     },
 
-    interact : function(i) 
+    interact : function(cmd, i) 
     {
+        cmd = cmd.split('-')[0]
         switch (cmd) {
             case 'logic':
                 return puzzles[0].interact(i)
-            case 'what-am-i-riddles':
+            case 'what':
                 return puzzles[1].interact(i)
-            case 'who-is-it-riddles':
-                return puzzles[2].interact(i)
-            case 'who-am-i-riddles':
-                return puzzles[3].interact(i)
-            case 'math-riddles':
+            case 'who':
+                if(cmd.split('-')[1] === 'is')
+                    return puzzles[2].interact(i)
+                else
+                    return puzzles[3].interact(i)
+            case 'mathr':
                 return puzzles[4].interact(i)
-            case 'best-riddles':
+            case 'best':
                 return puzzles[5].interact(i)
-            case 'riddles-for-adults':
+            case 'riddles':
                 return puzzles[6].interact(i)
-            case 'difficult-riddles':
+            case 'difficult':
                 return puzzles[7].interact(i)
         }
     }
