@@ -9,7 +9,7 @@ const puzzles = [];
 
 module.exports =
 {
-    commands: ['puzzle', 'whatami', 'whoisit', 'whoami', 'math', 'riddle'],
+    commands: ['puzzle', 'whatami', 'whoisit', 'whoami', 'math', 'riddle', 'teaser'],
 
 	execute : async function (message, embed, args, cmd) 
     {
@@ -26,6 +26,8 @@ module.exports =
                 return puzzles[4].send(message.channel);
             case 'riddle':
                 return puzzles[Math.floor(Math.random() * 2)+5].send(message.channel);
+            case 'teaser':
+                return puzzles[8].send(message.channel);
         }
     },
 
@@ -42,6 +44,8 @@ module.exports =
         puzzles.push(new PuzzleLibrary('best-riddles', embed, 10));
         puzzles.push(new PuzzleLibrary('riddles-for-adults', embed, 12));
         puzzles.push(new PuzzleLibrary('difficult-riddles', embed, 17));
+
+        puzzles.push(new PuzzleLibrary('brain-teasers', embed, 29));
 
         return true;
     },
@@ -66,6 +70,8 @@ module.exports =
             case 'riddles':
                 return puzzles[6].interact(i)
             case 'difficult':
+                return puzzles[7].interact(i)
+            case 'brain':
                 return puzzles[7].interact(i)
         }
     }

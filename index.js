@@ -157,14 +157,18 @@ client.on('messageCreate', async message =>{
 
 	client.features.each(feature => {
 		if(feature.tick == undefined) return;
-		feature.tick(message);
+		try {
+			feature.tick(message, connection);
+		} catch (error) {
+			feature.tick(message);
+		}
 	});
 
 	ExecuteCommands(message);
 });
 
 const ids = ['logic', 'what-am-i-riddles', 'who-is-it-riddles', 'who-am-i-riddles', 
-			 'math-riddles', 'best-riddles', 'riddles-for-adults', 'difficult-riddles']
+			 'math-riddles', 'best-riddles', 'riddles-for-adults', 'difficult-riddles', 'brain-teasers']
 
 client.on('interactionCreate', async (interaction) => {
 	interactions.each(async (value, key) => {

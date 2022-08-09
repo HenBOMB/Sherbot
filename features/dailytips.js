@@ -12,7 +12,7 @@ var enabled;
 
 var job;
 
-class MyStaticClass 
+class DailyTips 
 {
     static execute ()
     {
@@ -38,8 +38,8 @@ class MyStaticClass
         
         job = schedule.scheduleJob(rule, function(){
             console.log("sending daily tip");
-            const MyStaticClass = require("./dailytips");
-            MyStaticClass.dailyTip();
+            const DailyTips = require("./dailytips");
+            DailyTips.dailyTip();
         });
     }
 
@@ -58,8 +58,8 @@ class MyStaticClass
         
         job = schedule.scheduleJob(rule, function(){
             console.log("sending daily tip");
-            const MyStaticClass = require("./dailytips");
-            MyStaticClass.dailyTip();
+            const DailyTips = require("./dailytips");
+            DailyTips.dailyTip();
         });
     }
 
@@ -125,7 +125,10 @@ class MyStaticClass
                     embed.setImage(image)
                     .setDescription("<@&740693917514727431>")
                     
-                    channel.send({ embeds: [embed] })
+                    channel.send({ embeds: [embed] }).then(async message => {
+                        await message.react('👍');
+                        await message.react('👎');
+                    })
                     resolve();
                 })
 
@@ -149,4 +152,4 @@ class MyStaticClass
     }
 }
 
-module.exports = MyStaticClass;
+module.exports = DailyTips;

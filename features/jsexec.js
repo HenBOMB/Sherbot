@@ -23,7 +23,7 @@ module.exports =
         // begin check
 
         if(message.member.id != process.env.ownerid)
-            message.channel.send(`Ahem, no touchie`);
+            return
 
         // end check
 
@@ -42,7 +42,7 @@ module.exports =
             `
         }
 
-        code = "(async () => { " + code + " })";
+        code = "(async () => { try{" + code + "} catch(e){ return e } })";
         
         // end parse
         

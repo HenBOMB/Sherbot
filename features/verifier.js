@@ -42,6 +42,10 @@ module.exports =
 
         let content = message.content.toLowerCase();
 
+        if(content.includes("Have you read the rules?") ) score += 2;
+
+        if(content.includes("Why are you interested in deduction?")) score += 2;
+
         content = content.replace("Have you read the rules?".toLowerCase(), "");
         content = content.replace("Why are you interested in deduction? ".toLowerCase(), "");
         content = content.replace("How long have you been practicing deduction?".toLowerCase(), "");
