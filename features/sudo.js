@@ -1,6 +1,3 @@
-const Discord = require('discord.js');
-const fs = require('fs');
-
 var connection;
 var client;
 
@@ -23,7 +20,11 @@ module.exports =
 		const cmd = args[0];
         if(cmd !== 'sudo') return false;
 
-		if(args[1] !== 'embed') return message.channel.send(message.content.slice(5));
+		if(args[1] !== 'embed') 
+        {
+            await message.delete()
+            return message.channel.send(message.content.slice(5));
+        }
 
         const code = message.content.slice(10).replace(/^```+|```$/, '');
 
