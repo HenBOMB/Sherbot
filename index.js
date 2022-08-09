@@ -163,10 +163,15 @@ client.on('messageCreate', async message =>{
 	ExecuteCommands(message);
 });
 
+const ids = ['logic', 'what-am-i-riddles', 'who-is-it-riddles', 'who-am-i-riddles', 
+			 'math-riddles', 'best-riddles', 'riddles-for-adults', 'difficult-riddles']
+
 client.on('interactionCreate', async (interaction) => {
 	interactions.each(async (value, key) => {
-		if(interaction.customId.includes(key))
-			client.commands.at(value).interact(interaction);
+		ids.forEach(id => {
+			if(interaction.customId.includes(id))
+				client.commands.at(value).interact(id, interaction);
+		});
 	});
 })
 
@@ -203,7 +208,11 @@ function ExecuteCommands(message)
 
 			let args = message.content.trim().split(" ");
 			if(message.content === '') args = [];
-			module.execute(message, embed, args);
+			try {
+				module.execute(message, embed, args, cmd);
+			} catch (error) {
+				module.execute(message, embed, args);
+			}
 		}
     })
 }

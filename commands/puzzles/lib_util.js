@@ -2,6 +2,8 @@ const { MessageActionRow, MessageButton, MessageEmbed, Collection } = require('d
 const { RandomNumber } = require("../../../tools/random.js")
 const https = require('https');
 
+const icon = 'https://cdn3.iconfinder.com/data/icons/brain-games/1042/Puzzle-grey.png';
+
 class PuzzleLibrary
 {
     async send(channel)
@@ -15,7 +17,7 @@ class PuzzleLibrary
 		    );
 
         this.embed
-            .setAuthor(this.puzzle.title, 'https://image.flaticon.com/icons/png/512/170/170659.png')
+            .setAuthor(this.puzzle.title, icon)
             .setDescription(this.puzzle.riddle)
         
         channel.send({ embeds: [this.embed], components: [row] })
@@ -32,7 +34,7 @@ class PuzzleLibrary
 
         if(cache === undefined)
         {
-            embed.setDescription("**Fetching Answer...**");
+            embed.setDescription('Fetching answer...');
 
             interaction.reply({ embeds: [embed], ephemeral: true  }).then(async i => {
             
@@ -40,7 +42,7 @@ class PuzzleLibrary
                 this.cache.set(cache.index, cache);
     
                 embed.setDescription(cache.answer)
-                .setAuthor(cache.title, 'https://image.flaticon.com/icons/png/512/170/170659.png');
+                .setAuthor(cache.title, icon);
     
                 interaction.editReply({ embeds: [embed], ephemeral: true }).catch(console.error);
            
@@ -49,16 +51,16 @@ class PuzzleLibrary
         else
         {
             embed.setDescription(cache.answer)
-            .setAuthor(cache.title, 'https://image.flaticon.com/icons/png/512/170/170659.png');
+            .setAuthor(cache.title, icon);
 
             interaction.reply({ embeds: [embed], ephemeral: true }).catch(console.error);
         }
     }
 
-    constructor(uri, id, embed, pages)
+    constructor(uri, embed, pages)
     {
-        this.uri = uri;
-        this.id = id + ":";
+        this.uri = `https://www.riddles.com/${uri}?page=`;
+        this.id = `${uri}:`;
         this.embed = embed;
         this.pages = pages;
         this.cache = new Collection();
@@ -66,7 +68,7 @@ class PuzzleLibrary
         (async () => {
             this.puzzle = await PuzzleUtils.fetchRiddle(this.uri, this.pages);
             this.cache.set(this.puzzle.index, this.puzzle);
-            console.log("- init puzzle lib: " + id)
+            console.log("- init puzzle lib: " + this.id)
         })();
     }
 }
