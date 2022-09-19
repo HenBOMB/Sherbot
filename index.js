@@ -1,6 +1,6 @@
-const fs = require("fs");
-
 // // // // // // // // // // // // // // // // // // // // // //
+
+const fs = require("fs");
 
 const { Collection, Client, Intents } = require('discord.js');
 
@@ -18,8 +18,6 @@ const client = new Client({
 	partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
 });
 
-// // // // // // // // // // // // // // // // // // // // // //
-
 client.interactions = [];
 
 client.features = new Collection();
@@ -30,19 +28,14 @@ client.commands = new Collection();
 
 const welcomes = fs.readFileSync("./sherbot/data/welcomes.txt", 'utf8').split("\n");
 
-module.exports = {
-	initialize : async function(con)
-	{
-		client.login(token).then(() => console.log(" ✓ Bot online"));
-	}
-}
-
 const logError = (err) => {
 	client.guilds.cache.get('643440133881856019').channels.cache.get('871211833837629521')
 		.send(`<@348547981253017610>\n**An error occurred:** \`\`\`js\n${err}\`\`\``);
 };
 
 // // // // // // // // // // // // // // // // // // // // // //
+
+client.login(token).then(() => console.log(" ✓ Bot online"));
 
 client.once('ready', async () => {
 	client.user.setPresence({activities: [{ name: 'Sherlock', type: 'WATCHING'}], status: 'online' });
@@ -110,8 +103,8 @@ client.on('guildMemberAdd', async member => {
 	const welcome = RandomItem(welcomes).replace(/{user}/g, member.user.username);
 	const description = 
 `:confetti_ball: Welcome ${member} to The Art of Deduction! :confetti_ball:
-Head over to <#679769341058744379> to get started!
-Get started with dediction here <#852185225432793108> :mag:`;
+Head over to <#906149558801813605> to get verified!
+Get started with dediction here <#679769341058744379> 👑`;
 	
   	let th = 'th';
 	const str = member.guild.memberCount.toString();
