@@ -2,7 +2,8 @@ const { get } = require('https');
 const { scheduleJob, RecurrenceRule } = require('node-schedule');
 const { EmbedBuilder } = require('discord.js');
 
-const uri = 'https://aguidetodeduction.tumblr.com/tagged/A+Guide+to+Deduction/page/';
+const { dtips_url } = require('../config.json');
+
 const rule = new RecurrenceRule();
 
 var tipIndex;
@@ -34,7 +35,7 @@ class DailyTips
         const imgUrls = [];
 
         await new Promise(resolve => {
-            get(uri + (178 - page), (res) => 
+            get(dtips_url + (178 - page), (res) => 
             {
                 let data = "";
     
