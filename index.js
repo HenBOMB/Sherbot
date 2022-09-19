@@ -4,7 +4,7 @@ const mysql = require('mysql');
 
 const { Collection, Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 
-const { token, prefix, db_settings } = require('./config.json');
+const { token, prefix, db_settings, db_name } = require('./config.json');
 
 // // // // // // // // // // // // // // // // // // // // // //
 
@@ -46,7 +46,7 @@ connection.connect((err, args) => {
 
 	process.conn = connection;
 
-	connection.query("USE s134_batchbots", () => {
+	connection.query(`USE ${db_name}`, () => {
 		console.log("Connected to database");
 		console.log("\n\nSherbot");
 		client.login(token).then(() => console.log(" ✓ Bot online"));

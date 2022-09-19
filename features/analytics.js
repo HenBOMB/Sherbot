@@ -1,8 +1,7 @@
 const Member = require("../scripts/member");
-// const House = require("../scripts/house");
+const House = require("../scripts/house");
 
-const members = {};
-// Deduction channels
+// ? Deduction channels
 const channels = ['852185253279170572', '852469428759298058', '852185225432793108', '856119014597459998', '868129935347286026'];
 
 module.exports =
@@ -11,14 +10,13 @@ module.exports =
     
     tick : async function(message)
     {
-        const member = members[message.author.id] || await Member.load(message.author.id);
-        members[message.author.id] = member;
+        const member = await Member.load(message.author.id);
 
         member.msg_me++;
 
         if(member.house)
         {
-            // const house = await House.get(connection, member.house);
+            House.edit(member.house, 'xp', house.xp + Math.ceil(Math.random() * 10) + 20);
             member.msg_house++;
         }
 

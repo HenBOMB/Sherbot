@@ -15,15 +15,13 @@ module.exports =
 
         let content = message.content.toLowerCase();
 
-        if(content.includes("Have you read the rules?") ) score += 2;
+        if(content.includes("have you read the rules?") ) score += 4;
 
-        if(content.includes("Why are you interested in deduction?")) score += 2;
-
-        content = content.replace("Have you read the rules?".toLowerCase(), "");
-        content = content.replace("Why are you interested in deduction? ".toLowerCase(), "");
-        content = content.replace("How long have you been practicing deduction?".toLowerCase(), "");
-        content = content.replace("What is your favorite field of study?".toLowerCase(), "");
-        content = content.replace("What is your purpose of joining this server?".toLowerCase(), "");
+        content = content.replace("have you read the rules?", "");
+        content = content.replace("why are you interested in deduction? ", "");
+        content = content.replace("how long have you been practicing deduction?", "");
+        content = content.replace("what is your favorite field of study?", "");
+        content = content.replace("what is your purpose of joining this server?", "");
 
         const words = content.match(/[a-zA-Z]+/g).length;
         const characters = content.match(/[a-zA-Z]/g).length;

@@ -1,7 +1,7 @@
 /// Base class representing a server house
 class House
 {
-    constructor({name, motto, color, banner})
+    constructor({name, motto, color, banner, xp})
     {
         // House name
         this.name = name;
@@ -28,7 +28,7 @@ class House
     // ? Use House.set() when keeping this object alive for long
     save()
     {
-        process.conn.query(`UPDATE houses SET name = '${this.name}', motto = '${this.motto}', banner = '${this.banner}', color = '${this.color}' WHERE name = '${this.old}'`, (err, res) => {
+        process.conn.query(`UPDATE houses SET name = '${this.name}', motto = '${this.motto}', banner = '${this.banner}', color = '${this.color}', xp = '${this.xp} WHERE name = '${this.old}'`, (err, res) => {
             if(res.affectedRows === 0)
             {
                 throw Error("Outdated data found in House, object was kept alive for too long.");
@@ -50,11 +50,21 @@ class House
         });
     }
 
-    static async set(_name, {name, motto, color, banner})
+    static async set(_name, {name, motto, color, banner, xp})
     {
         if(!_name || !data) return null;
         return await new Promise(resolve => {
-            process.conn.query(`UPDATE houses SET name = '${name}', motto = '${motto}', banner = '${banner}', color = '${color}' WHERE name = '${_name}'`, (err, res) => {
+            process.conn.query(`UPDATE houses SET name = '${name}', motto = '${motto}', banner = '${banner}', color = '${color}', xp = '${xp} WHERE name = '${_name}'`, (err, res) => {
+                resolve();
+            });
+        });
+    }
+
+    static async edit(_name, key, value)
+    {
+        if(!_name || !data) return null;
+        return await new Promise(resolve => {
+            process.conn.query(`UPDATE houses SET ${key} = '${value}' WHERE name = '${_name}'`, (err, res) => {
                 resolve();
             });
         });
