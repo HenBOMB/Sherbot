@@ -1,20 +1,22 @@
-// // // // // // // // // // // // // // // // // // // // // //
-
 const fs = require("fs");
 
-const { Collection, Client, Intents } = require('discord.js');
+const mysql = require('mysql');
 
-const { token, prefix } = require('./config.json');
+const { Collection, Client, GatewayIntentBits } = require('discord.js');
 
-const { RandomItem } = require("../tools/random.js");
+const { token, prefix, db_settings } = require('./config.json');
+
+// // // // // // // // // // // // // // // // // // // // // //
+
+const connection = mysql.createConnection(db_settings);
 
 const client = new Client({
 	intents: [
-		Intents.FLAGS.GUILDS, 
-		Intents.FLAGS.GUILD_MEMBERS,
-		Intents.FLAGS.GUILD_MESSAGES, 
-		Intents.FLAGS.GUILD_VOICE_STATES, 
-		Intents.FLAGS.GUILD_MESSAGE_REACTIONS],
+		GatewayIntentBits.Guilds, 
+		GatewayIntentBits.GuildMembers,
+		GatewayIntentBits.GuildMessages, 
+		GatewayIntentBits.MessageContent, 
+		GatewayIntentBits.GuildMessageReactions],
 	partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
 });
 
@@ -24,25 +26,40 @@ client.features = new Collection();
 
 client.commands = new Collection();
 
-// // // // // // // // // // // // // // // // // // // // // //
-
-const welcomes = fs.readFileSync("./sherbot/data/welcomes.txt", 'utf8').split("\n");
+const welcomes = fs.readFileSync("./data/welcomes.txt", 'utf8').split("\n");
 
 const logError = (err) => {
 	client.guilds.cache.get('643440133881856019').channels.cache.get('871211833837629521')
 		.send(`<@348547981253017610>\n**An error occurred:** \`\`\`js\n${err}\`\`\``);
 };
 
+process.env.ownerid = '348547981253017610';
+process.env.conn = connection;
+
 // // // // // // // // // // // // // // // // // // // // // //
 
-client.login(token).then(() => console.log(" ✓ Bot online"));
+connection.connectasync (err => {
+	if (err) throw err;
+
+	console.clear();
+	console.log("Connected to mysql server");
+
+	connection.query("USE s134_batchbots", () => {
+		console.log("Connected to database");
+		console.log("\n\nSherbot");
+	
+		client.login(token).then(() => console.log(" ✓ Bot online"));
+	});
+});
+
+// // // // // // // // // // // // // // // // // // // // // //
 
 client.once('ready', async () => {
 	client.user.setPresence({activities: [{ name: 'Sherlock', type: 'WATCHING'}], status: 'online' });
 
 	// ? Load
-	const feature_files = fs.readdirSync('./sherbot/features').filter(file => file.endsWith('.js'));
-	const command_files = fs.readdirSync('./sherbot/commands').filter(file => file.endsWith('.js'));
+	const feature_files = fs.readdirSync('./features').filter(file => file.endsWith('.js'));
+	const command_files = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 	const failed = [];
 	let success = 0;
 
@@ -75,14 +92,14 @@ client.once('ready', async () => {
 
 	// ? Features
 
-	process.env.conn.query("SELECT * FROM sherbot WHERE id = '670107546480017409'", (err, res) => {
+	connection.query("SELECT * FROM sherbot WHERE id = '670107546480017409'", (err, res) => {
 		for (const file of feature_files)
 		{
 			success++;
 			try 
 			{
 				const module = require(`./features/${file}`);
-				module.initialize(client.guilds.cache.get("670107546480017409"), process.env.conn, res[0]);
+				module.initialize(client.guilds.cache.get("670107546480017409"), connection, res[0]);
 				client.features.set(file.slice(0,-3), module);
 				console.log(` ✓ features/${file}`);
 			} 
@@ -100,7 +117,7 @@ client.once('ready', async () => {
 client.on('guildMemberAdd', async member => {
 	if(member.guild.id != '670107546480017409') return;
 	
-	const welcome = RandomItem(welcomes).replace(/{user}/g, member.user.username);
+	const welcome = welcomes[Math.floor(Math.random() * welcomes.length)].replace(/{user}/g, member.user.username);
 	const description = 
 `:confetti_ball: Welcome ${member} to The Art of Deduction! :confetti_ball:
 Head over to <#906149558801813605> to get verified!
