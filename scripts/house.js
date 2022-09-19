@@ -25,7 +25,7 @@ class House
     // ? Use House.set() when keeping this object alive for long
     save()
     {
-        process.env.conn.query(`UPDATE houses SET name = '${this.name}', motto = '${this.motto}', banner = '${this.banner}', color = '${this.color}' WHERE name = '${this.old}'`, (err, res) => {
+        process.conn.query(`UPDATE houses SET name = '${this.name}', motto = '${this.motto}', banner = '${this.banner}', color = '${this.color}' WHERE name = '${this.old}'`, (err, res) => {
             if(res.affectedRows === 0)
             {
                 throw Error("Outdated data found in House, object was kept alive for too long.");
@@ -41,7 +41,7 @@ class House
     {
         if(!name) return null;
         return await new Promise(resolve => {
-            process.env.conn.query(`SELECT * FROM houses WHERE name = '${name}'`, (err, res) => {
+            process.conn.query(`SELECT * FROM houses WHERE name = '${name}'`, (err, res) => {
                 resolve(new House(res));
             });
         });
@@ -51,7 +51,7 @@ class House
     {
         if(!_name || !data) return null;
         return await new Promise(resolve => {
-            process.env.conn.query(`UPDATE houses SET name = '${name}', motto = '${motto}', banner = '${banner}', color = '${color}' WHERE name = '${_name}'`, (err, res) => {
+            process.conn.query(`UPDATE houses SET name = '${name}', motto = '${motto}', banner = '${banner}', color = '${color}' WHERE name = '${_name}'`, (err, res) => {
                 resolve();
             });
         });
@@ -62,7 +62,7 @@ class House
     {
         if(!name) return null;
         return await new Promise(resolve => {
-            process.env.conn.query(`INSERT INTO houses (name) VALUES ('${name}')`, (err, res) => {
+            process.conn.query(`INSERT INTO houses (name) VALUES ('${name}')`, (err, res) => {
                 resolve(new House({name}));
             });
         });
@@ -72,7 +72,7 @@ class House
     {
         if(!name) return null;
         return await new Promise(resolve => {
-            process.env.conn.query(`DELETE FROM houses WHERE name = '${name}'`, (err, res) => {
+            process.conn.query(`DELETE FROM houses WHERE name = '${name}'`, (err, res) => {
                 resolve();
             });
         });

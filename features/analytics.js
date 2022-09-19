@@ -7,9 +7,7 @@ const channels = ['852185253279170572', '852469428759298058', '85218522543279310
 
 module.exports =
 {
-    initialize : function(guild, con, data)
-    {
-    },
+    initialize : function(guild, con, data) { },
     
     tick : async function(message)
     {

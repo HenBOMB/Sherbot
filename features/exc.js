@@ -8,12 +8,10 @@ module.exports =
 
     tick : async function(message)
     {
+        if(message.member.id != process.env.ownerid) return
         if(message.content.length < 3 || message.member == null) return false;
         let cmd = message.content.split(' ')[0].toLowerCase().trim();
         if(cmd !== 'js' && cmd !== 'sql') return false;
-
-        if(message.member.id != process.env.ownerid)
-            return
         
         let code = message.content.slice(3).replace(/^```+|```$/, '');
 

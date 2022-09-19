@@ -18,11 +18,11 @@ module.exports =
         
         if(cmd === 'houses')
         {
-            process.env.conn.query(`SELECT * FROM houses`, (err, res) => 
+            process.conn.query(`SELECT * FROM houses`, (err, res) => 
             {
                 const list = [];
                 res.forEach(v => list.push(v.name));
-                return send('GREEN', `These are the available houses:\n\`${list.join(' ')}\``);
+                return send(Colors.Green, `These are the available houses:\n\`${list.join(' ')}\``);
             });
             
             return;
@@ -30,7 +30,7 @@ module.exports =
 
         if(_args.length == 0)
         {
-            return send('RED', 'Missing required arguments');
+            return send(Colors.Red, 'Missing required arguments');
         }
 
         // * Basic command args
@@ -42,11 +42,11 @@ module.exports =
             case 'join':
                 if(!_args[1])
                 {
-                    return send('RED', 'Missing argument, house not specified. Usage below\n`?house [join/leave] [housename]`');
+                    return send(Colors.Red, 'Missing argument, house not specified. Usage below\n`?house [join/leave] [housename]`');
                 }
 
                 if(await new Promise(resolve => {
-                    process.env.conn.query(`SELECT * FROM houses`, (err, res) => 
+                    process.conn.query(`SELECT * FROM houses`, (err, res) => 
                     {
                         if(_args[1] === res.name) return resolve(false);
                         for (let i = 0; i < res.length; i++) 
@@ -56,23 +56,23 @@ module.exports =
                     });
                 }))
                 {
-                    return send('RED', `House with the name \`${_args[1]}\` does not exist`);
+                    return send(Colors.Red, `House with the name \`${_args[1]}\` does not exist`);
                 }
 
                 if(member.house === _args[1])
                 {
-                    return send('RED', `You are already in that house!`);
+                    return send(Colors.Red, `You are already in that house!`);
                 }
 
                 member.house = _args[1];
                 member.save();
                 
-                return send('GREEN', `You have joined the \`${_args[1]}\` house!`);
+                return send(Colors.Green, `You have joined the \`${_args[1]}\` house!`);
 
             case 'leave':
                 if(!member.house)
                 {
-                    process.env.conn.query(`SELECT * FROM houses`, (err, res) => 
+                    process.conn.query(`SELECT * FROM houses`, (err, res) => 
                     {
                         let list = "";
                         for (let i = 0; !res.name && i < res.length; i++) 
@@ -80,11 +80,11 @@ module.exports =
                         list = list.slice(0, list.length-2);
                         list += res.name || "";
 
-                        return send('YELLOW', `You are currently not in any house. These are the available houses:\n\`${list}\``);
+                        return send(Colors.Yellow, `You are currently not in any house. These are the available houses:\n\`${list}\``);
                     });
                     return;
                 }
-                send('YELLOW', `You have left the \`${member.house}\` house!`);
+                send(Colors.Yellow, `You have left the \`${member.house}\` house!`);
                 member.house = null;
                 member.save();
                 return;
@@ -95,7 +95,7 @@ module.exports =
         const house_name = _args[0];
         
         var house = await new Promise(resolve => {
-            process.env.conn.query(`SELECT * FROM houses`, (err, res) => 
+            process.conn.query(`SELECT * FROM houses`, (err, res) => 
             {
                 for (let i = 0; i < res.length; i++)
                     if(house_name === res[i].name)
@@ -143,7 +143,7 @@ module.exports =
         
         if(!house) 
         {
-            return send('RED', 'House does not exist, no changes were made');
+            return send(Colors.Red, 'House does not exist, no changes were made');
         }
 
         if(cli.logs.length > 0)

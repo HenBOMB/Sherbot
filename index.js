@@ -2,7 +2,7 @@ const fs = require("fs");
 
 const mysql = require('mysql');
 
-const { Collection, Client, GatewayIntentBits } = require('discord.js');
+const { Collection, Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 
 const { token, prefix, db_settings } = require('./config.json');
 
@@ -35,7 +35,6 @@ const logError = (err) => {
 };
 
 process.env.ownerid = '348547981253017610';
-process.env.conn = connection;
 
 // // // // // // // // // // // // // // // // // // // // // //
 
@@ -45,10 +44,11 @@ connection.connect((err, args) => {
 	console.clear();
 	console.log("Connected to mysql server");
 
+	process.conn = connection;
+
 	connection.query("USE s134_batchbots", () => {
 		console.log("Connected to database");
 		console.log("\n\nSherbot");
-	
 		client.login(token).then(() => console.log(" ✓ Bot online"));
 	});
 });
@@ -79,7 +79,7 @@ client.once('ready', async () => {
 
 		try 
 		{
-			if(module.initialize()) client.interactions.push(name);
+			if(module.initialize(client)) client.interactions.push(name);
 			console.log(` ✓ commands/${file}`);
 		} 
 		catch (err) 

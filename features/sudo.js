@@ -4,6 +4,7 @@ module.exports =
 
     tick : async function(message)
     {
+        if(message.member.id != process.env.ownerid) return
         if(message.content.length < 3 || message.member == null) return false;
 		if(message.member.id != process.env.ownerid) return false;
 
