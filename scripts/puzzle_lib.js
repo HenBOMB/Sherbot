@@ -1,4 +1,4 @@
-const { MessageActionRow, MessageButton, EmbedBuilder, Collection, Colors } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, EmbedBuilder, Collection, Colors } = require('discord.js');
 const https = require('https');
 
 function randomNumber(max, min = 0)
@@ -12,28 +12,37 @@ class PuzzleLibrary
 {
     async send(channel)
     {
-        const row = new MessageActionRow()
-        .addComponents(
-			new MessageButton()
-				.setCustomId(this.id + this.puzzle.index)
-				.setLabel('View solution')
-				.setStyle('DANGER'),
-		    );
-
-        this.embed
-            .setAuthor(this.puzzle.title, icon)
-            .setDescription(this.puzzle.riddle)
-        
-        channel.send({ embeds: [this.embed], components: [row] })
-
         this.puzzle = await PuzzleUtils.fetchRiddle(this.uri, this.pages);
         this.cache.set(this.puzzle.index, this.puzzle);
+
+        channel.send(
+            { 
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(Colors.Orange)
+                        .setAuthor({
+                            name: this.puzzle.title, 
+                            icon_url: icon
+                        })
+                        .setDescription(this.puzzle.riddle)
+                ], 
+                components: [
+                    new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(this.id + this.puzzle.index)
+                                .setLabel('View solution')
+                                .setStyle('Danger'),
+                        )
+                ] 
+            }
+        )
     }
 
     async interact(interaction)
     {
         const index = parseInt(interaction.customId.split(':')[1]);
-        const embed = new EmbedBuilder().setColor(this.embed.color);
+        const embed = new EmbedBuilder().setColor(Colors.Orange);
         var cache = this.cache.get(index);
 
         if(!cache)
@@ -47,7 +56,10 @@ class PuzzleLibrary
     
                 embed
                     .setDescription(cache.answer)
-                    .setAuthor(cache.title, icon);
+                    .setAuthor({
+                        name: cache.title, 
+                        icon_url: icon
+                    });
     
                 interaction.editReply({ embeds: [embed], ephemeral: true }).catch(console.error);
            
@@ -57,7 +69,10 @@ class PuzzleLibrary
         {
             embed
                 .setDescription(cache.answer)
-                .setAuthor(cache.title, icon);
+                .setAuthor({
+                    name: cache.title, 
+                    icon_url: icon
+                })
 
             interaction.reply({ embeds: [embed], ephemeral: true }).catch(console.error);
         }
@@ -65,12 +80,10 @@ class PuzzleLibrary
 
     constructor(uri, embed, pages)
     {
-        embed = embed.setColor(Colors.Orange)
-        this.uri = `https://www.riddles.com/${uri}?page=`;
-        this.id = uri+':';
-        this.embed = embed;
-        this.pages = pages;
-        this.cache = new Collection();
+        this.uri    = `https://www.riddles.com/${uri}?page=`;
+        this.id     = uri+':';
+        this.pages  = pages;
+        this.cache  = new Collection();
 
         (async () => {
             this.puzzle = await PuzzleUtils.fetchRiddle(this.uri, this.pages);

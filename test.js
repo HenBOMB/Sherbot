@@ -7,10 +7,16 @@ for (let i = 0; i < arr.length; i++)
 {
   table[`${arr[i]}`] = {
     rp : sent * rp,
-    rp_left : arr[i] - (sent * rp),
+    left : arr[i] - (sent * rp),
     sent: sent,
     need: arr[i] / (sent * rp),
   }
+
+  // sent 10 messages
+  // rp required to next level: 800
 }
 
-console.table(table, ['rp', 'rp_left', 'need', 'sent']);
+console.clear();
+console.log(`SENT: ${rp}`)
+console.log(`RP: ${rp}`)
+console.table(table, ['left', 'need']);

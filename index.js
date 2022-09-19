@@ -176,14 +176,14 @@ client.on('interactionCreate', async (interaction) => {
 
 function executeFeatures(message)
 {
-	try {
-		client.features.each(feature => {
-			if(!feature.tick) return;
+	client.features.each(feature => {
+		if(!feature.tick) return;
+		try {
 			feature.tick(message);
-		});
-	} catch (err) {
-		logError(err);
-	}
+		} catch (err) {
+			logError(err);
+		}
+	});
 }
 
 function executeCommands(message)
