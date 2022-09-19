@@ -1,18 +1,10 @@
-const Discord = require('discord.js');
-const fs = require('fs');
-
-var connection;
-var client;
+const connection = process.env.conn;
 
 module.exports =
 {
-    name : "jsexec",
+    name : "exc",
 
-    initialize : function(guild, con, data)
-    {
-        connection = con;
-        client = guild.client;
-    },
+    initialize : function(guild, con, data) { },
 
     tick : async function(message)
     {
@@ -20,14 +12,8 @@ module.exports =
         let cmd = message.content.split(' ')[0].toLowerCase().trim();
         if(cmd !== 'js' && cmd !== 'sql') return false;
 
-        // begin check
-
         if(message.member.id != process.env.ownerid)
             return
-
-        // end check
-
-        // begin parse
         
         let code = message.content.slice(3).replace(/^```+|```$/, '');
 
@@ -36,8 +22,8 @@ module.exports =
             code = `
             try{
                 return await new Promise((resolve) => {
-                    connection.query(\"${code}\", (err, res) => { 
-                        resolve(res.length == 1? res[0] : res);
+                    connection.query(\"${code}\", (err, res) => {
+                        resolve(res? res.length == 1? res[0] : res : err);
                     })
                 })
             }
@@ -61,7 +47,7 @@ module.exports =
             if(result == undefined)
                 return true;
 
-            message.channel.send(`\`\`\`js\n${ JSON.stringify(result, null, 2) }\`\`\``);
+            message.channel.send(`\`\`\`js\n${ JSON.stringify(result.code || result, null, 2) }\`\`\``);
         }
         catch (error) 
         {

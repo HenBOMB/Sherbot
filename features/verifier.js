@@ -1,40 +1,13 @@
-const { MessageEmbed } = require("discord.js");
-
-var enabled;
-var connection;
-
 module.exports =
 {
-    initialize : function(guild, con, data)
-    {
-        enabled = data.verif_on == 1? true : false;
-        verifyChannel = guild.channels.cache.get('906149558801813605');
-        warnChannel = guild.channels.cache.get('718576277329674361');
-        connection = con;
-    },
+    initialize : function(guild, con, data) { },
     
-    execute : function(embed)
-    {
-        enabled = !enabled;
-
-        connection.query(`UPDATE sherbot SET verif_on = ${enabled} WHERE id = 670107546480017409`,
-        (err) => {
-            if(err) 
-            {
-                verifyChannel.guild.channels.get('718576277329674361').send({ content: "@HenBOMB.#0274\n**Failed to update data on `verifier.js`** (verif_on)" })
-                return;
-            }
-
-            console.log("update: verif_on (verifier.js)")
-        });
-    },
-
     tick : async function(message)
     {
-        if(!enabled || message.member == null) 
+        if(message.member == null) 
             return;
 
-        if(message.channel.id != verifyChannel) 
+        if(message.channel.id != '906149558801813605') 
             return;
 
         if(message.member.roles.cache.has('906128248193306635'))
@@ -57,15 +30,6 @@ module.exports =
 
         if(words < 15 || characters < 40)
             return;
-
-        const embed = new MessageEmbed();
-
-        // if(characters < 50)
-        // {
-        //     embed.setDescription(`[**User ${message.author} requires human verification :warning: **](${message.url})`)
-        //     .setColor("ffcc00");
-        //     return warnChannel.send({ content: "<@&679795909143429123>", embeds: [embed]});
-        // }
 
         let score = 0;
 
@@ -124,16 +88,6 @@ module.exports =
             await message.react('✅');
             await message.member.roles.add('906128248193306635');
             await message.member.roles.add('670108333834764288');
-
-            embed.setDescription(`[**User ${message.author} has been auto-verified :white_check_mark:**](${message.url})`)
-            .setColor("4BB543");
-            await warnChannel.send({ embeds: [embed]})
-        }
-        else
-        {
-            embed.setDescription(`[**User ${message.author} requires human verification :warning: **](${message.url})`)
-            .setColor("e50000");
-            warnChannel.send({ content: "<@&679795909143429123>", embeds: [embed]})
         }
     },
 };

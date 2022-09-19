@@ -8,8 +8,6 @@ const { token, prefix } = require('./config.json');
 
 const { RandomItem } = require("../tools/random.js");
 
-const { GenericEmbed }  = require("../tools/utils.js");
-
 const client = new Client({
 	intents: [
 		Intents.FLAGS.GUILDS, 
@@ -22,106 +20,98 @@ const client = new Client({
 
 // // // // // // // // // // // // // // // // // // // // // //
 
-const interactions = new Collection();
+client.interactions = [];
 
 client.features = new Collection();
 
 client.commands = new Collection();
 
-client.music = new Collection();
-
 // // // // // // // // // // // // // // // // // // // // // //
 
 const welcomes = fs.readFileSync("./sherbot/data/welcomes.txt", 'utf8').split("\n");
 
-// set externally
-var connection;
-
 module.exports = {
-	initialize : function(con)
+	initialize : async function(con)
 	{
-		connection = con;
-		client.login(token);
+		client.login(token).then(() => console.log(" ✓ Bot online"));
 	}
 }
+
+const logError = (err) => {
+	client.guilds.cache.get('643440133881856019').channels.cache.get('871211833837629521')
+		.send(`<@348547981253017610>\n**An error occurred:** \`\`\`js\n${err}\`\`\``);
+};
 
 // // // // // // // // // // // // // // // // // // // // // //
 
 client.once('ready', async () => {
-	console.log("\nSherbot ->");
 	client.user.setPresence({activities: [{ name: 'Sherlock', type: 'WATCHING'}], status: 'online' });
 
-	// Load the files
-	const feature_files = fs.readdirSync('./sherbot/features').filter(file => file.endsWith('.js') && !file.includes('util'));
-	const command_files = fs.readdirSync('./sherbot/commands').filter(file => !file.includes('util'));
-	const paths = new Collection();
-	const guild = client.guilds.cache.get("670107546480017409");
+	// ? Load
+	const feature_files = fs.readdirSync('./sherbot/features').filter(file => file.endsWith('.js'));
+	const command_files = fs.readdirSync('./sherbot/commands').filter(file => file.endsWith('.js'));
+	const failed = [];
+	let success = 0;
+
+	// ? Initializing
+
+	// ? Commands
 
 	for (const file of command_files)
 	{
-		if(!file.endsWith('.js'))
-		{
-			const command_sub_files = fs.readdirSync('./sherbot/commands/'+file).filter(file => file.endsWith('.js') && !file.includes('util'));
+		success++;
 
-			for (const subfile of command_sub_files)
-			{
-				const name = subfile.slice(0,-3);
-				client.commands.set(name, require(`./commands/${file}/${subfile}`));
-				client.commands.get(name).name = name;
-				paths.set(name, `./commands/${file}/${subfile}`);
-			}
-			continue;
+		const module = require(`./commands/${file}`);
+		const name = file.slice(0,-3);
+
+		module.name = name;
+
+		try 
+		{
+			if(module.initialize()) client.interactions.push(name);
+			console.log(` ✓ commands/${file}`);
+		} 
+		catch (err) 
+		{
+			failed.push(`${name}.js: ${err.toString()}`);
+			console.log(` ✗ commands/${file}`);
 		}
 
-		const name = file.slice(0,-3);
-		client.commands.set(name, require(`./commands/${file}`));
-		client.commands.get(name).name = name;
-		paths.set(name, `./commands/${file}`);
+		client.commands.set(name, module);
 	}
 
-	// Initialize the files
+	// ? Features
 
-	console.log('- loaded ./sherbot/data/welcomes.txt');
-
-	connection.query("SELECT * FROM sherbot WHERE id = 670107546480017409", (err, res) => {
-		res = res[0];
-
-		// Load the Commands
-		let i = 0;
-		client.commands.forEach(module => {
-			const val = module.initialize(client, connection, res);
-			if(val === true)
-				interactions.set(module.name, i)
-			console.log(`- init ${paths.get(module.name)}`)
-			i++;
-		});
-
-		// Load the Features
-
+	process.env.conn.query("SELECT * FROM sherbot WHERE id = '670107546480017409'", (err, res) => {
 		for (const file of feature_files)
 		{
-			const feature = require(`./features/${file}`);
-			feature.initialize(guild, connection, res);
-			client.features.set(file.slice(0,-3), feature);
-			console.log(`- init ./features/${file}`);
+			success++;
+			try 
+			{
+				const module = require(`./features/${file}`);
+				module.initialize(client.guilds.cache.get("670107546480017409"), process.env.conn, res[0]);
+				client.features.set(file.slice(0,-3), module);
+				console.log(` ✓ features/${file}`);
+			} 
+			catch (err) 
+			{
+				failed.push(`${file}: ${err.toString()}`);
+				console.log(` ✗ features/${file}`);
+			}
 		}
-
-		// Done
-
-		console.log("- bot online");
+			
+		console.log(`Done initializing\nsuccess: ${success-failed.length}\nfailed: ${failed.length}\n- ${failed.join('\n- ')}`);
 	});
 });
 
 client.on('guildMemberAdd', async member => {
 	if(member.guild.id != '670107546480017409') return;
 	
-	let welcome = RandomItem(welcomes);
-	welcome = welcome.replace(/{user}/g, member.user.username);
-
-	let description = 
+	const welcome = RandomItem(welcomes).replace(/{user}/g, member.user.username);
+	const description = 
 `:confetti_ball: Welcome ${member} to The Art of Deduction! :confetti_ball:
-Head over to <#679769341058744379> to learn deduction!
-View other's deductions at <#852185225432793108> :mag:`;
+Head over to <#679769341058744379> to get started!
+Get started with dediction here <#852185225432793108> :mag:`;
 	
   	let th = 'th';
 	const str = member.guild.memberCount.toString();
@@ -129,8 +119,9 @@ View other's deductions at <#852185225432793108> :mag:`;
 	else if(str[str.length-1] == '2') th = 'nd';
 	else if(str[str.length-1] == '3') th = 'rd';
 
-	const bot = member.guild.members.cache.get('712429527321542777');
-	const embed = GenericEmbed(bot)
+	
+
+	const embed = new MessageEmbed().setColor(member.guild.members.cache.get('712429527321542777').roles.color.color)
 		.setTitle(welcome)
 		.setDescription(description)
 		.setThumbnail(member.user.displayAvatarURL())
@@ -138,98 +129,119 @@ View other's deductions at <#852185225432793108> :mag:`;
 		.setFooter(`Joined as the ${member.guild.memberCount}${th} member`, member.user.displayAvatarURL());
 	
 	member.guild.channels.cache.get('670108784307470337').fetch().then(channel => {
-		channel.send({ embeds: [embed] })
+		channel.send({ embeds: [embed] });
 	});
 })
 
 client.on('messageCreate', async message =>{
-    if(message.author.id == '712429527321542777') 
-		return;
+    if(message.author.id == '712429527321542777') return;
 
-	client.features.each(feature => {
-		if(feature.tick == undefined) return;
-		feature.tick(message);
-	});
+	executeFeatures(message);
 
-	ExecuteCommands(message);
+	executeCommands(message);
 });
 
 const ids = ['logic', 'what-am-i-riddles', 'who-is-it-riddles', 'who-am-i-riddles', 
 			 'math-riddles', 'best-riddles', 'riddles-for-adults', 'difficult-riddles', 'brain-teasers']
 
 client.on('interactionCreate', async (interaction) => {
-	interactions.each(async (value, key) => {
-		ids.forEach(id => {
-			if(interaction.customId.includes(id))
-				client.commands.at(value).interact(id, interaction);
-		});
-	});
+    try{
+		const arr = ids.filter(id => interaction.customId.includes(id));
+
+		if(arr.length > 0)
+		{
+			// ! This is size 1 so loop cancels out
+			for (const v of client.interactions)
+				// client.commands.at(v).interact(arr[0], interaction); // Used at() because v was an int?
+				client.commands.get(v).interact(arr[0], interaction);
+		}
+    }
+    catch(err){
+		logError(err);
+    }
 })
 
 // // // // // // // // // // // // // // // // // // // // // //
 
-function ExecuteCommands(message)
+function executeFeatures(message)
+{
+	try {
+		client.features.each(feature => {
+			if(!feature.tick) return;
+			feature.tick(message);
+		});
+	} catch (err) {
+		logError(err);
+	}
+}
+
+function executeCommands(message)
 {
 	if(message.content.slice(0, prefix.length).toLowerCase() != prefix) 
 		return;
 	
-	let cmd = message.content.slice(prefix.length).split(" ")[0].toLowerCase();
+	const cmd = message.content.slice(prefix.length).split(" ")[0].toLowerCase();
 	
 	message.content = message.content.slice(cmd.length + prefix.length + 1);
 
-    client.commands.each(module => 
-	{
+    client.commands.each(module => {
 		if(!module.commands.includes(cmd)) 
 			return;
 
-		if(module.ids !== undefined && !module.ids.includes(message.author.id))
+		if(module.ids && !module.ids.includes(message.author.id))
 			return;
 
-		if(module.role !== undefined && message.member.id !== process.env.ownerid)
-		{
-			if(!message.member.roles.cache.has(module.role))
-				return;
-		}
+		if(module.role && message.member.id !== process.env.ownerid && !message.member.roles.cache.has(module.role))
+			return;
 
-        if(module.flags !== undefined)
-            ExecuteCommandWithFlags(module, message);
+        if(module.flags)
+        {
+			executeCommandWithFlags(module, message);
+		}
         else
 		{
-			let embed = GenericEmbed(message.member);
+			const embed = new MessageEmbed().setColor(message.member.roles.color.color);
+			const args = message.content?.trim().split(" ") || [];
 
-			let args = message.content.trim().split(" ");
-			if(message.content === '') args = [];
 			try {
 				module.execute(message, embed, args, cmd);
-			} catch (error) {
-				module.execute(message, embed, args);
+			} catch (err) {
+				try {
+					module.execute(message, embed, args);
+				} catch (err) { 
+					logError(err);
+				}
 			}
 		}
     })
 }
 
-function ExecuteCommandWithFlags(module, message)
+function executeCommandWithFlags(module, message)
 {
-    const dms = message.channel.type == 'dm';
+    try {
+		const dms = message.channel.type == 'dm';
  
-    if(dms && !module.flags.includes("dms")) 
-		return;
+		if(dms && !module.flags.includes("dms")) 
+			return;
 
-    let mention = message.mentions.members.first();
+		let mention = message.mentions.members.first();
 
-	if(module.flags.includes("mention") && (mention === undefined || mention === null))
-		return;
-    
-	let embed = GenericEmbed(message.member);
-            
-    if(module.flags.includes("noargs")) 
-		module.execute(message, embed)
-    else if(module.flags.includes("mention"))
-		module.execute(message, embed, mention)
-	else 
-	{
-		let args = message.content.trim().split(" ");
-		if(message.content === '') args = [];
-		module.execute(message, embed, args)
+		if(module.flags.includes("mention") && (mention === undefined || mention === null))
+			return;
+		
+		const embed = new MessageEmbed().setColor(message.member.roles.color.color);
+				
+		if(module.flags.includes("noargs")) 
+			module.execute(message, embed)
+		else if(module.flags.includes("mention"))
+			module.execute(message, embed, mention)
+		else 
+		{
+			let args = message.content.trim().split(" ");
+			if(!message.content) args = [];
+			module.execute(message, embed, args)
+		}
+	} catch (err) {
+		logError(err);
 	}
 }

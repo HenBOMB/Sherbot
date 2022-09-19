@@ -1,6 +1,10 @@
 const { MessageActionRow, MessageButton, MessageEmbed, Collection } = require('discord.js');
-const { RandomNumber } = require("../../../tools/random.js")
 const https = require('https');
+
+function randomNumber(max, min = 0)
+{
+    return Math.floor(Math.random() * (max - min) + min);
+}
 
 const icon = 'https://cdn3.iconfinder.com/data/icons/brain-games/1042/Puzzle-grey.png';
 
@@ -32,7 +36,7 @@ class PuzzleLibrary
         const embed = new MessageEmbed().setColor(this.embed.color);
         var cache = this.cache.get(index);
 
-        if(cache === undefined)
+        if(!cache)
         {
             embed.setDescription('Fetching answer...');
             
@@ -41,8 +45,9 @@ class PuzzleLibrary
                 cache = await PuzzleUtils.findRiddle(this.uri, index);
                 this.cache.set(cache.index, cache);
     
-                embed.setDescription(cache.answer)
-                .setAuthor(cache.title, icon);
+                embed
+                    .setDescription(cache.answer)
+                    .setAuthor(cache.title, icon);
     
                 interaction.editReply({ embeds: [embed], ephemeral: true }).catch(console.error);
            
@@ -50,8 +55,9 @@ class PuzzleLibrary
         }
         else
         {
-            embed.setDescription(cache.answer)
-            .setAuthor(cache.title, icon);
+            embed
+                .setDescription(cache.answer)
+                .setAuthor(cache.title, icon);
 
             interaction.reply({ embeds: [embed], ephemeral: true }).catch(console.error);
         }
@@ -59,8 +65,9 @@ class PuzzleLibrary
 
     constructor(uri, embed, pages)
     {
+        embed = embed.setColor('RANDOM')
         this.uri = `https://www.riddles.com/${uri}?page=`;
-        this.id = `${uri}:`;
+        this.id = uri+':';
         this.embed = embed;
         this.pages = pages;
         this.cache = new Collection();
@@ -68,7 +75,7 @@ class PuzzleLibrary
         (async () => {
             this.puzzle = await PuzzleUtils.fetchRiddle(this.uri, this.pages);
             this.cache.set(this.puzzle.index, this.puzzle);
-            console.log("- init puzzle lib: " + this.id)
+			console.log(` ✓ loaded lib ${this.id}`);
         })();
     }
 }
@@ -77,7 +84,7 @@ class PuzzleUtils
 {
     static async fetchRiddle(uri, pages, obj = undefined)
     {
-        const page = pages === -1? '' : RandomNumber(pages);
+        const page = pages === -1? '' : randomNumber(pages);
         
         return new Promise(resolve => {
             https.get(uri + page, (resp) => 
@@ -93,7 +100,7 @@ class PuzzleUtils
     
                 resp.on('end', async () => 
                 { 
-                    // Auto page count detection
+                    // ? Auto page count detection
                     // const m = data.match(/(?<=<title>.+\d....).*(?= .+<\/title>)/gm);
                     // if(m != null) console.log(m[0])
 
@@ -115,35 +122,6 @@ class PuzzleUtils
                     // }
 
                     const riddles = data.match(/(?<=Riddle:<\/strong>  ).*?(?=..<div class)/gms);
-                    
-                    // if(riddles === null || riddles[0].match(/(?<=<).*?(?=>)/gms) != null)
-                    // {
-                        // const answers = data.match(/(?<=print" href=").*?(?=">)/gms);
-
-                        // if(answers === null)
-                        // {
-                        //     resolve(undefined);
-                        //     return;
-                        // }
-                        // const index = RandomNumber(answers.length);
-
-                        // resolve(await PuzzleLibraryV2.fetchRiddle(answers[index], -1), { index: index, page : page});
-                    // }
-                    // else
-                    // {
-                    //     const index = RandomNumber(riddles.length);
-
-                    //     const titles = data.match(/(?<=<h3 class="panel-title lead inline">).*?(?=<\/h3>)/gms);
-                    //     const answers = data.match(/(?<=Answer<\/strong>: ).*?(?=\n)/gms);
-                       
-                    //     resolve({
-                    //         title:  titles[index].replace(/\\n|\\r/gm, '').replace(/&#039;/, "'"),
-                    //         riddle: riddles[index].replace(/\\n|\\r/gm, '').replace(/&#039;/, "'"),
-                    //         answer: answers[index].replace(/\\n|\\r/gm, '').replace(/&#039;/, "'"),
-                    //         index: index,
-                    //         page: page
-                    //     });
-                    // }
 
                     if(riddles == null)
                     {
@@ -153,8 +131,7 @@ class PuzzleUtils
                         return;
                     }
 
-                    const index = RandomNumber(riddles.length);
-                    
+                    const index = randomNumber(riddles.length);
                     const titles = data.match(/(?<=<h3 class="panel-title lead inline">).*?(?=<\/h3>)/gms);
                     const answers = data.match(/(?<=Answer<\/strong>: ).*?(?=\n)/gms);
                    
@@ -214,9 +191,7 @@ class PuzzleUtils
             obj.answer = obj.answer.replace(/\\n|\\r/gm, '').replace(/&#039;/, "'");
         }
         catch{
-            obj.title = "An error occurred";
-            obj.riddle = "An error occurred";
-            obj.answer = "An error occurred";
+            obj.title = obj.riddle = obj.answer = "An error occurred";
         }
         
         return obj;

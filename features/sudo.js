@@ -1,15 +1,6 @@
-var connection;
-var client;
-
 module.exports =
 {
-    name : "sudo",
-
-    initialize : function(guild, con, data)
-    {
-        connection = con;
-        client = guild.client;
-    },
+    initialize : function(guild, con, data) { },
 
     tick : async function(message)
     {
