@@ -1,4 +1,4 @@
-const { MessageEmbed } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 
 /// Base class representing a CLI and interpereter
 class CLI
@@ -21,7 +21,7 @@ class CLI
     {
         if(this.logs.length > 0)
         {
-            channel.send({ embeds: [new MessageEmbed().setColor('GREEN').setDescription(`${this.logs.join('\n')}`)] });
+            channel.send({ embeds: [new EmbedBuilder().setColor('GREEN').setDescription(`${this.logs.join('\n')}`)] });
         }
     }
 

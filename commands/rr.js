@@ -1,4 +1,4 @@
-const { MessageEmbed } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const CLI = require('../scripts/cli');
 
 //?rr [new, edit] (#channel, messageid) --{ghost, clear, delete, desc, role [@role] [emoji]}
@@ -22,7 +22,7 @@ module.exports =
         })
         .add('clear', 'Content cleared', async () => {
             if(!rrMsg) return false;
-            await rrMsg.edit({ embeds: [new MessageEmbed().setDescription('Template')] });
+            await rrMsg.edit({ embeds: [new EmbedBuilder().setDescription('Template')] });
         })
         .add('delete', 'Message deleted', async () => {
             if(!rrMsg) return false;

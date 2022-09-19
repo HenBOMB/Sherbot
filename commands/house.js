@@ -1,4 +1,4 @@
-const { MessageEmbed } = require('discord.js');
+const { EmbedBuilder, Colors } = require('discord.js');
 
 const House = require("../scripts/house");
 const Member = require("../scripts/member");
@@ -13,7 +13,7 @@ module.exports =
 	execute : async function (message, embed, _args, cmd) 
     {
         const send = (color, desc) => {
-            return message.channel.send({ embeds: [new MessageEmbed().setColor(color).setDescription(desc)] });
+            return message.channel.send({ embeds: [new EmbedBuilder().setColor(color).setDescription(desc)] });
         }
         
         if(cmd === 'houses')
@@ -108,8 +108,8 @@ module.exports =
 
         cli.add('view', 'House preview', () => {
             if(!house) return false;
-            let _embed = new MessageEmbed()
-                .setColor(house.color.length > 0? house.color : 'RANDOM')
+            let _embed = new EmbedBuilder()
+                .setColor(house.color.length > 0? house.color : Colors.Orange)
                 .setTitle(house.name.slice(0,1).toUpperCase() + house.name.slice(1).toLowerCase())
                 .setDescription(`${house.motto}`)
                 .setThumbnail(house.banner.length > 0? house.banner : 'https://cdn.discordapp.com/attachments/1018969696445403217/1018969756709171250/missingimage.png')

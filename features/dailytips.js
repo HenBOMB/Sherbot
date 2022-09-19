@@ -1,6 +1,6 @@
 const { get } = require('https');
 const { scheduleJob, RecurrenceRule } = require('node-schedule');
-const { MessageEmbed } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 
 const uri = 'https://aguidetodeduction.tumblr.com/tagged/A+Guide+to+Deduction/page/';
 const rule = new RecurrenceRule();
@@ -30,7 +30,7 @@ class DailyTips
     static async dailyTip()
     {
         const member = channel.guild.members.cache.get('712429527321542777');
-        const embed = new MessageEmbed().setColor(member.roles.color.color || member.roles.color.hexColor || "#ffffff");
+        const embed = new EmbedBuilder().setColor(member.roles.color.color || member.roles.color.hexColor || "#ffffff");
         const imgUrls = [];
 
         await new Promise(resolve => {

@@ -1,4 +1,4 @@
-const { MessageActionRow, MessageButton, MessageEmbed, Collection } = require('discord.js');
+const { MessageActionRow, MessageButton, EmbedBuilder, Collection, Colors } = require('discord.js');
 const https = require('https');
 
 function randomNumber(max, min = 0)
@@ -33,7 +33,7 @@ class PuzzleLibrary
     async interact(interaction)
     {
         const index = parseInt(interaction.customId.split(':')[1]);
-        const embed = new MessageEmbed().setColor(this.embed.color);
+        const embed = new EmbedBuilder().setColor(this.embed.color);
         var cache = this.cache.get(index);
 
         if(!cache)
@@ -65,7 +65,7 @@ class PuzzleLibrary
 
     constructor(uri, embed, pages)
     {
-        embed = embed.setColor('RANDOM')
+        embed = embed.setColor(Colors.Orange)
         this.uri = `https://www.riddles.com/${uri}?page=`;
         this.id = uri+':';
         this.embed = embed;

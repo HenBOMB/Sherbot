@@ -1,4 +1,4 @@
-const { MessageEmbed } = require('discord.js');
+const { EmbedBuilder, Colors } = require('discord.js');
 const PuzzleLibrary = require('../scripts/puzzle_lib');
 
 const puzzles = [];
@@ -33,7 +33,7 @@ module.exports =
 
     initialize : function(conn)
     {
-        let embed = new MessageEmbed().setColor('RANDOM');
+        let embed = new EmbedBuilder().setColor(Colors.Orange);
         
         puzzles.push(new PuzzleLibrary('logic-puzzles', embed, 10));
         puzzles.push(new PuzzleLibrary('what-am-i-riddles', embed, 3));

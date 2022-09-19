@@ -29,6 +29,7 @@ client.commands = new Collection();
 const welcomes = fs.readFileSync("./data/welcomes.txt", 'utf8').split("\n");
 
 const logError = (err) => {
+	console.trace(`[Error] ${err}`);
 	client.guilds.cache.get('643440133881856019').channels.cache.get('871211833837629521')
 		.send(`<@348547981253017610>\n**An error occurred:** \`\`\`js\n${err}\`\`\``);
 };
@@ -38,7 +39,7 @@ process.env.conn = connection;
 
 // // // // // // // // // // // // // // // // // // // // // //
 
-connection.connectasync (err => {
+connection.connect((err, args) => {
 	if (err) throw err;
 
 	console.clear();
@@ -131,7 +132,7 @@ Get started with dediction here <#679769341058744379> 👑`;
 
 	
 
-	const embed = new MessageEmbed().setColor(member.guild.members.cache.get('712429527321542777').roles.color.color)
+	const embed = new EmbedBuilder().setColor(member.guild.members.cache.get('712429527321542777').roles.color.color)
 		.setTitle(welcome)
 		.setDescription(description)
 		.setThumbnail(member.user.displayAvatarURL())
@@ -210,7 +211,7 @@ function executeCommands(message)
 		}
         else
 		{
-			const embed = new MessageEmbed().setColor(message.member.roles.color.color);
+			const embed = new EmbedBuilder().setColor(message.member.roles.color.color);
 			const args = message.content?.trim().split(" ") || [];
 
 			try {
@@ -239,7 +240,7 @@ function executeCommandWithFlags(module, message)
 		if(module.flags.includes("mention") && (mention === undefined || mention === null))
 			return;
 		
-		const embed = new MessageEmbed().setColor(message.member.roles.color.color);
+		const embed = new EmbedBuilder().setColor(message.member.roles.color.color);
 				
 		if(module.flags.includes("noargs")) 
 			module.execute(message, embed)
