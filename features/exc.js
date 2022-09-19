@@ -1,5 +1,3 @@
-const connection = process.env.conn;
-
 module.exports =
 {
     name : "exc",
@@ -13,43 +11,39 @@ module.exports =
         let cmd = message.content.split(' ')[0].toLowerCase().trim();
         if(cmd !== 'js' && cmd !== 'sql') return false;
         
-        let code = message.content.slice(3).replace(/^```+|```$/, '');
+        let code = message.content.slice(4).replace(/^```+|```$/, '');
 
         if(cmd == 'sql')
         {
             code = `
             try{
-                return await new Promise((resolve) => {
-                    connection.query(\"${code}\", (err, res) => {
-                        resolve(res? res.length == 1? res[0] : res : err);
+                return await new Promise(resolve => {
+                    process.conn.query(\"${code}\", (err, res) => {
+                        resolve(res || err);
                     })
                 })
             }
-            catch(e){
-                return e
+            catch(err){
+                return err;
             }
             `
         }
 
-        code = "(async () => { try{" + code + "} catch(e){ return e } })";
+        code = "(async () => { try{" + code + "} catch(err){ return err } })";
         
         // end parse
         
-        if(code == undefined) 
-            return false;
+        if(!code) return false;
 
         try 
         {
             const result = await eval(code)();
-
-            if(result == undefined)
-                return true;
-
+            if(!result) return true;
             message.channel.send(`\`\`\`js\n${ JSON.stringify(result.code || result, null, 2) }\`\`\``);
         }
-        catch (error) 
+        catch (err) 
         {
-            message.channel.send(`\`\`\`js\n${ error.toString() }\`\`\``);
+            message.channel.send(`\`\`\`js\n${ err.toString() }\`\`\``);
         }
 
         return true;

@@ -15,6 +15,9 @@ class House
         // House url banner image
         this.banner = banner || "https://cdn.discordapp.com/attachments/1018969696445403217/1018969756709171250/missingimage.png";
 
+        // House experience
+        this.xp = xp || 0;
+
         // Used to determine which house to save the data in
         this.old = this.name;
     }
