@@ -130,8 +130,6 @@ Get started with dediction here <#679769341058744379> 👑`;
 	else if(str[str.length-1] == '2') th = 'nd';
 	else if(str[str.length-1] == '3') th = 'rd';
 
-	
-
 	const embed = new EmbedBuilder().setColor(member.guild.members.cache.get('712429527321542777').roles.color.color)
 		.setTitle(welcome)
 		.setDescription(description)
@@ -242,10 +240,14 @@ function executeCommandWithFlags(module, message)
 		
 		const embed = new EmbedBuilder().setColor(message.member.roles.color.color);
 				
-		if(module.flags.includes("noargs")) 
+		if(module.flags.includes("noargs"))
+		{
 			module.execute(message, embed)
+		}
 		else if(module.flags.includes("mention"))
+		{
 			module.execute(message, embed, mention)
+		}
 		else 
 		{
 			let args = message.content.trim().split(" ");
