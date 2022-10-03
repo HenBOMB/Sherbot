@@ -3,7 +3,6 @@
 {user} just joined. Can I get a heal?
 {user} joined your party.
 {user} joined. You must construct additional pylons.
-Ermagherd. {user} is here.
 Welcome, {user}. Stay awhile and listen.
 Welcome, {user}. We were expecting you ( ͡° ͜ʖ ͡°)
 Welcome, {user}. We hope you brought pizza.
@@ -36,4 +35,8 @@ Ready player {user}
 {user} is here to kick butt and chew bubblegum. And {user} is all out of gum.
 Hello. Is it {user} you're looking for?
 {user} has joined. Stay a while and listen!
-Roses are red, violets are blue, {user} joined this server with you
+Roses are red, violets are blue, {user} joined this server with you.
+{user} is here to deduce!
+{user} just joined. Everyone, make deductions!
+{user} has crashed the party.
+{user} joined the sherlock crew.

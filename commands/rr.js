@@ -1,55 +1,132 @@
-const { EmbedBuilder } = require('discord.js');
-const CLI = require('../scripts/_cli');
+const { EmbedBuilder, Colors } = require('discord.js');
 
-//?rr [new, edit] (#channel, messageid) --{ghost, clear, delete, desc, role [@role] [emoji]}
+// ? /rr [new, edit] (#channel, messageid) --{ghost, clear, delete, desc, role [@role] [emoji]}
+// ? /rr edit 1020033297209892965 --role @member :emote: --role @arg 🚦 --ghost
 
+// ? /rr (id) 
 module.exports =
 {
-    commands: ['rr'],
+    description: "Reaction roles utility.",
 
-	execute : async function (message, embed, args, cmd) 
+    options: [
+        {
+            type: 1,
+            name: "create",
+            description: "Creates a blank reaction role message.",
+            options: [
+                {
+                    type: 3,
+                    name: "title",
+                    description: "The title of the reaction roles message.",
+                    required: true
+                },
+                {
+                    type: 3,
+                    name: "description",
+                    description: "The description of the reaction roles message."
+                }
+            ]
+        },
+        {
+            type: 1,
+            name: "add",
+            description: "Adds a reaction role to the message.",
+            options: [
+                {
+                    type: 4,
+                    name: "id",
+                    description: "The reaction role message to target.",
+                    required: true
+                },
+                {
+                    type: 8,
+                    name: "role",
+                    description: "Role to give out.",
+                    required: true
+                },
+                {
+                    type: 3,
+                    name: "emoji",
+                    description: "Emoji used to react.",
+                    required: true
+                }
+            ]
+        },
+        {
+            type: 1,
+            name: "edit",
+            description: "Sets a new title or description of reaction role message.",
+            options: [
+                {
+                    type: 4,
+                    name: "id",
+                    description: "The reaction role message to target.",
+                    required: true
+                },
+                {
+                    type: 3,
+                    name: "title",
+                    description: "A new title.",
+                },
+                {
+                    type: 3,
+                    name: "description",
+                    description: "A new description.",
+                }
+            ]
+        }
+    ],
+
+    // ? @Director
+    roles: ['742750595345022978'],
+
+    ephemeral: true,
+
+    // TODO Missing reaction handler
+    
+    initialize: function(client)
     {
-        const cli = new CLI();
-
-        var rrMsg = null;
-
-        // ? Example:
-        // ? ?rr edit 1020033297209892965 --role @member :emote: --role @arg 🚦 --ghost
-        // ? ?rr edit 1020033297209892965 --role @Colors :emote: --ghost
-
-        cli.add('ghost', 'Input message cleared', async () => {
-            await message.delete();
-        })
-        .add('clear', 'Content cleared', async () => {
-            if(!rrMsg) return false;
-            await rrMsg.edit({ embeds: [new EmbedBuilder().setDescription('Template')] });
-        })
-        .add('delete', 'Message deleted', async () => {
-            if(!rrMsg) return false;
-            await rrMsg.delete();
-            rrMsg = null;
-        })
-        .add('desc', 'Description updated', async (content) => {
-            if(!rrMsg) return false;
-            await rrMsg.edit({ embeds: [rrMsg.embeds[0].setDescription(content)] });
-        })
-        .add('role', 'Roles updated', async (content) => {
-            if(!rrMsg) return false;
-
-            // * @color 🎻
-            const rolename = content.match(/@\w+/gm).slice(1);
-            const emoji = content.replace(/@\w+ /gm, '').trim();
-            const valid = rrMsg.mentions.roles.filter(role => role.name === rolename)[0];
-            
-            if(!valid || !emoji) return false;
-
-            await rrMsg.react(emoji);
-        })
-        .execute(message.content).log();
+        client.reactionRoles = {};
+        process.conn.query(`SELECT * FROM reaction_roles`, (err, res) => {
+            res.forEach(data => {
+                client.reactionRoles[data.id] = { 
+                    roles: data.roles.split(','),
+                    emojis: data.emojis.split(',')
+                };
+            });
+        });
     },
 
-    initialize : function(conn)
+    interact : async function({ options, channel })
     {
-        
+        let message = options.getInteger('id')? await channel.messages.fetch(`${options.getInteger('id')}`) : null;
+        let embed = message? message.embeds[0] : new EmbedBuilder();
+
+        switch (options.getSubcommand()) {
+            case 'create':
+                embed = embed
+                    .setTitle(options.getString('title'))
+                    .setDescription(options.getString('description')||'ㅤ');
+                message = await channel.send({ embeds: [embed] });
+                return `Message created with ID: ${message.id}`;
+
+            case 'add':
+                process.conn.query(`SELECT roles, emojis FROM reaction_roles WHERE id='${message.id}'`, (err, res) => {
+                    const roles = res[0].roles.split(',');
+                    const emojis = res[0].roles.split(',');
+                    roles.push(options.getRole('role').id);
+                    emojis.push(options.getString('emoji'));
+                    process.conn.query(`UPDATE reaction_roles SET roles = '${roles.join(',')}', emojis = '${emojis.join(',')}'`, (err, res) => { });
+                });
+                await message.react(options.getString('emoji'));
+                return `Added rr ${options.getRole('role')} with emoji ${options.getString('emoji')}`;
+
+            case 'edit':
+                embed = embed
+                    .setDescription(options.getString('description'))
+                    .setTitle(options.getString('title'));
+                await channel.edit({ embeds: [embed] });
+                return `Successfully edited rr message.`;
+        }
     }
 };

@@ -1,3 +1,5 @@
+const { Colors } = require('discord.js');
+
 module.exports =
 {
     tick : async function(message)
@@ -84,6 +86,7 @@ module.exports =
             await message.react('✅');
             await message.member.roles.add('906128248193306635');
             await message.member.roles.add('670108333834764288');
+            process.log('Verified', `[Auto verified ${message.member}](${message.url}) ✅`, Colors.Green);
         }
     },
 };

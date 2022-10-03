@@ -42,14 +42,14 @@ process.logError = async (error) => {
 		.setDescription(`\`\`\`js\n${error.message}\`\`\`\n\`\`\`js\n${error.stack}\`\`\``)
 		.setColor(Colors.Red)
 		.setTimestamp();
-	await channel.send({ content: '<@348547981253017610>' });
+	await process.logChannel.send({ content: '<@348547981253017610>' });
 	process.logChannel.send({ embeds: [embed] });
 };
 
 process.logWarn = async (description) => { 
 	const embed = new EmbedBuilder()
 		.setTitle('Warning')
-		.setDescription(`${description}\nin: <#${channel.name}>`)
+		.setDescription(description)
 		.setColor(Colors.Yellow)
 		.setTimestamp();
 	process.logChannel.send({ embeds: [embed] });
@@ -110,26 +110,26 @@ client.once('ready', async () => {
 		// ? Set the name to be the same as the script name
 		command.name = name;
 
-		// ? Validate command
-		if(!command.interact)
-		{
-			console.log(`       ✗ interact not found`);
-			continue;
-		}
-
-		// ? Validate slash command
-		if(!command.description)
-		{
-			console.log(`       ✗ description not found`);
-			continue;
-		}
-
 		try 
 		{
 			if(command.initialize && command.initialize(client)) 
 				client.interactions.push(name);
 
 			console.log(`   ✓ ${name}`);
+
+			// ? Validate command
+			if(command.interact === undefined)
+			{
+				console.log(`       ✗ interact not found`);
+				continue;
+			}
+
+			// ? Validate slash command
+			if(command.description === undefined)
+			{
+				console.log(`       ✗ description not found`);
+				continue;
+			}
 
 			command.available = true;
 
@@ -144,11 +144,13 @@ client.once('ready', async () => {
 				}, process.guild.id)
 				.then(cmd => {
 					if(cmd.retry_after)
-						console.log(`       ${cmd.message} (${cmd.retry_after})`);
+						console.log(`       ! ${cmd.message} (${cmd.retry_after})`);
 					else if(cmd.errors)
-						console.log(cmd.errors);
+						console.log(`       ✗ ${JSON.stringify(cmd.errors, null, 2)}`);
 					else if(cmd.id)
-						console.log(`       /${cmd.name} ${cmd.options.map(v => v.required?`[${v.name}]`:`(${v.name})`).join(' ')}`);
+						console.log(`       /${cmd.name} ${cmd.options? cmd.options.map(v => v.required?`[${v.name}]`:`(${v.name})`).join(' ') : ''}`);
+					else
+						console.log(`       ? ${cmd.message})`);
 				})
 				.catch(console.error);
 		} 
@@ -192,10 +194,7 @@ client.on('guildMemberAdd', async member => {
 	if(member.guild.id != process.guild.id) return;
 	
 	const welcome = welcomes[Math.floor(Math.random() * welcomes.length)].replace(/{user}/g, member.user.username);
-	const description = 
-`:confetti_ball: Welcome ${member} to The Art of Deduction! :confetti_ball:
-Head over to <#906149558801813605> to get verified!
-Get started with dediction here <#679769341058744379> 👑`;
+	const description = `🎊 Welcome ${member} to The Art of Deduction! 🎊\n Head on over to <#906149558801813605> to get verified!`;
 	
   	let th = 'th';
 	const str = member.guild.memberCount.toString();
@@ -215,8 +214,34 @@ Get started with dediction here <#679769341058744379> 👑`;
 	});
 });
 
-client.on('messageCreate', async message =>{
+client.on('messageCreate', async message => {
     if(message.author.bot) return;
+	if(message.author.id === process.ownerid && message.content.includes('preview'))
+	{
+		const channel = await message.member.user.createDM();
+		const embed = new EmbedBuilder()
+			.setTitle(`🎉 Welcome to the server ${message.member.user.username}! 🎉`)
+			.setThumbnail(message.member.displayAvatarURL())
+			.setDescription(`
+ㅤ
+*We're glad to have you* 💖
+
+Introduce yourself~
+• <#670108903224377354>
+
+Say hi :wave:
+• <#670111155263635476>
+
+Some channels you might be interested in
+▸ <#679769341058744379>
+▸ <#714701731724001311>
+▸ <#718905410442100787>
+`)
+			.setImage('https://media.discordapp.net/attachments/1018969696445403217/1026395223028404324/unknown.png')
+			.setFooter({ text: message.guild.name })
+			.setTimestamp();
+		return await channel.send({ embeds: [embed] });
+	}
 
 	client.features.each(feature => {
 		if(!feature.tick) return;
@@ -253,9 +278,12 @@ client.on('interactionCreate', async (interaction) => {
 
 async function handleSlashCommands(interaction)
 {
+	const sorryErrOcc = { content: '☹️ Sorry, an error occured. Please try again later!', ephemeral: true };
+
 	if(!client.commands.has(interaction.commandName))
 	{
 		// ! Impossible to get here unless api changes
+		// ? Or if 2 interactions from separate places call the same interaction
 		return interaction.reply({ content: `☹️ Sorry, that command does not exist.`, ephemeral: true });
 	}
 
@@ -271,22 +299,30 @@ async function handleSlashCommands(interaction)
 		return interaction.reply({ content: `☹️ Sorry! Only ${command.roles.map(v => interaction.member.guild.roles.cache.get(v)).join(', ')} may use this command.`, ephemeral: true });
 	}
 	
-	try {
-		if(command.defer) interaction.deferReply({ephemeral: command.ephemeral});
+	// ? Run the command interaction
 
-		const out = (await command.interact(interaction)) || { content: '☹️ Sorry, an error occured. Please try again later!', ephemeral: true};
+	if(command.defer) interaction.deferReply({ephemeral: command.ephemeral});
+
+	const reply = command.defer? interaction.followUp : interaction.reply;
+
+	try {
+		// TODO Theres a weird bug where if defer and ephmeral are true, then when returning an embed, it crashes.. (InteractionNotReplied)
+
+		const out = (await command.interact(interaction));
+
+		if(!out) throw TypeError(`Command returned ${out}`);
+
 		const options = out.content || out.embeds? out : { 
 			content: out instanceof EmbedBuilder? '' : out, 
 			embeds: out instanceof EmbedBuilder? [out] : []
 		};
 
 		options.ephemeral = command.ephemeral || out.ephemeral;
-		
-		console.log(options);
 
-		if(command.defer) interaction.followUp(options);
-		else interaction.reply(options);
-	} catch (error) {
+		reply(options);
+	} 
+	catch (error) {
 		process.logError(error);
-	}
+		reply(sorryErrOcc);
+	} 
 }

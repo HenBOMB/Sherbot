@@ -8,7 +8,7 @@ module.exports =
         // ? Exclude the info channel and make sure its a jail channel
         const getChannels = () => process.guild.channels.cache.filter(v => v.parentId === '1025816106985852948' && v.id !== '1026245265558077520');
         
-        // ? Enables sending messages at 6:30am
+        // ? Enables sending messages after 6:30am
         scheduleJob(new RecurrenceRule(hour=6, minute=30, tz='Etc/UTC'), () => {
             getChannels().forEach(channel => {
                 channel.permissionOverwrites.edit('670113370938277888', {
@@ -18,7 +18,7 @@ module.exports =
             process.log('Jail', 'Wake-up, all cells opened.', Colors.Yellow)
         });
 
-        // ? Disables sending messages at 8pm
+        // ? Disables sending messages after 8pm
         scheduleJob(new RecurrenceRule(hour=20, tz='Etc/UTC'), () => {
             getChannels().forEach(channel => {
                 channel.permissionOverwrites.edit('670113370938277888', {
