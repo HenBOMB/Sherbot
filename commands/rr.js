@@ -3,7 +3,10 @@ const { EmbedBuilder, Colors } = require('discord.js');
 // ? /rr [new, edit] (#channel, messageid) --{ghost, clear, delete, desc, role [@role] [emoji]}
 // ? /rr edit 1020033297209892965 --role @member :emote: --role @arg 🚦 --ghost
 
-// ? /rr (id) 
+const reactionRoles = { };
+
+// TODO emoji cannot be stored in db. Find workaround.
+
 module.exports =
 {
     description: "Reaction roles utility.",
@@ -82,18 +85,46 @@ module.exports =
 
     ephemeral: true,
 
-    // TODO Missing reaction handler
-    
     initialize: function(client)
     {
-        client.reactionRoles = {};
         process.conn.query(`SELECT * FROM reaction_roles`, (err, res) => {
             res.forEach(data => {
-                client.reactionRoles[data.id] = { 
-                    roles: data.roles.split(','),
-                    emojis: data.emojis.split(',')
-                };
+                reactionRoles[data.id] = { };
+
+                const emojis = data.emojis.split(',');
+                const roles = data.roles.split(',');
+
+                for (let i = 0; i < emojis.length; i++)
+                    reactionRoles[data.id][emojis[i]] = roles[i];
             });
+        });
+
+        client.on('messageDelete', async ({ id }) => {
+            if(!reactionRoles[id]) return;
+            
+            delete reactionRoles[id];
+        
+            process.conn.query(`DELETE FROM reaction_roles WHERE id = '${id}'`, (err, res) => { });
+        });
+        
+        client.on('messageReactionAdd', async ({ emoji, message, me }, user) => {
+            // console.log(message.reactions.cache.map(v => v.emoji.name));
+            
+            if(me || !reactionRoles[message.id]) return;
+            
+            const role = reactionRoles[message.id][emoji.name];
+            const member = await message.guild.members.fetch(user.id);
+            
+            await member.roles.add(role);
+        });
+        
+        client.on('messageReactionRemove', async ({ emoji, message, me }, user) => {
+            if(me || !reactionRoles[message.id]) return;
+            
+            const role = reactionRoles[message.id][emoji.name];
+            const member = await message.guild.members.fetch(user.id);
+            
+            await member.roles.remove(role);
         });
     },
 

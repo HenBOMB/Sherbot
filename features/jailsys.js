@@ -9,26 +9,39 @@ module.exports =
         const getChannels = () => process.guild.channels.cache.filter(v => v.parentId === '1025816106985852948' && v.id !== '1026245265558077520');
         
         // ? Enables sending messages after 6:30am
-        scheduleJob(new RecurrenceRule(hour=6, minute=30, tz='Etc/UTC'), () => {
+
+        const rule1 = new RecurrenceRule();
+        rule1.hour = 6;
+        rule1.minute = 30;
+        rule1.tz = 'Etc/UTC';
+
+        scheduleJob(rule1, () => {
             getChannels().forEach(channel => {
                 channel.permissionOverwrites.edit('670113370938277888', {
                     SendMessages: true
                 })
             });
-            process.log('Jail', 'Wake-up, all cells opened.', Colors.Yellow)
+            process.log('Jail', '**Wake-up, all cells opened.**', Colors.Yellow);
         });
 
         // ? Disables sending messages after 8pm
-        scheduleJob(new RecurrenceRule(hour=20, tz='Etc/UTC'), () => {
+
+        const rule2 = new RecurrenceRule();
+        rule2.hour = 20;
+        rule2.minute = 0;
+        rule2.tz = 'Etc/UTC';
+
+        scheduleJob(rule2, () => {
             getChannels().forEach(channel => {
                 channel.permissionOverwrites.edit('670113370938277888', {
                     SendMessages: false
                 })
             });
-            process.log('Jail', 'Retiring, all cells closed.')
+            process.log('Jail', '**Retiring, all cells closed.**');
         });
 
         // ? Disable sending messages in other cells
+        
         process.conn.query(`SELECT * FROM jail`, (err, res) => {
             const channels = getChannels();
             
@@ -41,21 +54,16 @@ module.exports =
                     {
                         channel.permissionOverwrites.create(member, {
                             SendMessages: true
-                        })
+                        });
                     }
                     else
                     {
                         channel.permissionOverwrites.create(member, {
                             SendMessages: false
-                        })
+                        });
                     }
                 })
             })
         });
-    },
-    
-    tick : async function(message)
-    {
-        
-    },
+    }
 };

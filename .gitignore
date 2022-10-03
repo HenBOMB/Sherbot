@@ -106,3 +106,5 @@ dist
 *.json
 
 _*.js
+
+notes/

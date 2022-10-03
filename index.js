@@ -8,7 +8,7 @@ const { DiscordInteractions } = require("slash-commands");
 
 const { token, publicKey, db_settings, db_name } = require('./config.json');
 
-// // // // // // // // // // // // // // // // // // // // // //
+// ? // // // // // // // // // // // // // // // // // // // // //
 
 const connection = mysql.createConnection(db_settings);
 
@@ -64,7 +64,7 @@ process.log = async (title, description, color = Colors.Orange) => {
 	process.logChannel.send({ embeds: [embed] });
 };
 
-// // // // // // // // // // // // // // // // // // // // // //
+// ? // // // // // // // // // // // // // // // // // // // // //
 
 connection.connect((err, args) => {
 	if (err) throw err;
@@ -172,7 +172,7 @@ client.once('ready', async () => {
 			try 
 			{
 				const module = require(`./features/${file}`);
-				if(module.initialize) module.initialize(client.guilds.cache.get(process.guild.id), res[0]);
+				if(module.initialize) module.initialize(process.guild, res[0]);
 				client.features.set(name, module);
 				console.log(`   ✓ ${name}`);
 			} 
@@ -188,7 +188,7 @@ client.once('ready', async () => {
 	});
 });
 
-// // // // // // // // // // // // // // // // // // // // // //
+// ? // // // // // // // // // // // // // // // // // // // // //
 
 client.on('guildMemberAdd', async member => {
 	if(member.guild.id != process.guild.id) return;

@@ -27,7 +27,8 @@ class Member
         
         return await new Promise(resolve => {
             process.conn.query(q, (err, res) => {
-                if(res.affectedRows === 0)
+                // TODO untested
+                if(!res || res.affectedRows === 0)
                 {
                     process.conn.query(`INSERT INTO users (id) VALUES ('${this.id}')`, (err, res) => {});
                     this.save();

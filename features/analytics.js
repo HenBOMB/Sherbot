@@ -1,14 +1,11 @@
 const Member = require("../scripts/member");
 const House = require("../scripts/house");
 
-// ? Deduction channels
-const channels = ['852185253279170572', '852469428759298058', '852185225432793108', '856119014597459998', '868129935347286026'];
-
 module.exports =
 {
-    tick : async function(message)
+    tick : async function({ author, channel, content })
     {
-        const member = await Member.load(message.author.id);
+        const member = await Member.load(author.id);
 
         member.msg_me++;
 
@@ -19,7 +16,8 @@ module.exports =
             member.msg_house++;
         }
 
-        if(channels.includes(message.channel.id) && message.content.match(/(?<=\|\|).{25,}(?=\|\|)/gm))
+        // ? Deduction category
+        if(channel.parentId === '852185049860276304' && content.match(/(?<=\|\|).{25,}(?=\|\|)/gm))
         {
             member.msg_ded++;
             return member.save();
