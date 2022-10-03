@@ -2,9 +2,11 @@ const fs = require("fs");
 
 const mysql = require('mysql');
 
-const { Collection, Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { Collection, Client, GatewayIntentBits, EmbedBuilder, Colors } = require('discord.js');
 
-const { token, prefix, db_settings, db_name } = require('./config.json');
+const { DiscordInteractions } = require("slash-commands");
+
+const { token, publicKey, db_settings, db_name } = require('./config.json');
 
 // // // // // // // // // // // // // // // // // // // // // //
 
@@ -20,6 +22,12 @@ const client = new Client({
 	partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
 });
 
+const interaction = new DiscordInteractions({
+	applicationId: "712429527321542777",
+	authToken: token,
+	publicKey,
+});
+
 client.interactions = [];
 
 client.features = new Collection();
@@ -28,13 +36,33 @@ client.commands = new Collection();
 
 const welcomes = fs.readFileSync("./data/welcomes.txt", 'utf8').split("\n");
 
-const logError = (err) => {
-	console.trace(`[Error] ${err}`);
-	client.guilds.cache.get('643440133881856019').channels.cache.get('871211833837629521')
-		.send(`<@348547981253017610>\n**An error occurred:** \`\`\`js\n${err}\`\`\``);
+process.logError = async (error) => { 
+	const embed = new EmbedBuilder()
+		.setTitle(error.name)
+		.setDescription(`\`\`\`js\n${error.message}\`\`\`\n\`\`\`js\n${error.stack}\`\`\``)
+		.setColor(Colors.Red)
+		.setTimestamp();
+	await channel.send({ content: '<@348547981253017610>' });
+	process.logChannel.send({ embeds: [embed] });
 };
 
-process.env.ownerid = '348547981253017610';
+process.logWarn = async (description) => { 
+	const embed = new EmbedBuilder()
+		.setTitle('Warning')
+		.setDescription(`${description}\nin: <#${channel.name}>`)
+		.setColor(Colors.Yellow)
+		.setTimestamp();
+	process.logChannel.send({ embeds: [embed] });
+};
+
+process.log = async (title, description, color = Colors.Orange) => { 
+	const embed = new EmbedBuilder()
+		.setTitle(title)
+		.setDescription(description)
+		.setColor(color)
+		.setTimestamp();
+	process.logChannel.send({ embeds: [embed] });
+};
 
 // // // // // // // // // // // // // // // // // // // // // //
 
@@ -53,70 +81,115 @@ connection.connect((err, args) => {
 	});
 });
 
-// // // // // // // // // // // // // // // // // // // // // //
-
 client.once('ready', async () => {
+	// ? Set env variables
+
+	process.ownerid = '348547981253017610';
+	process.guild = await client.guilds.fetch('670107546480017409');
+	process.logChannel = await process.guild.channels.fetch('1026319776630456421');
+
 	client.user.setPresence({activities: [{ name: 'Sherlock', type: 'WATCHING'}], status: 'online' });
 
 	// ? Load
-	const feature_files = fs.readdirSync('./features').filter(file => file.endsWith('.js'));
-	const command_files = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+	const feature_files = fs.readdirSync('./features').filter(file => file.endsWith('.js') && !file.startsWith('_'));
+	const command_files = fs.readdirSync('./commands').filter(file => file.endsWith('.js') && !file.startsWith('_'));
 	const failed = [];
-	let success = 0;
 
-	// ? Initializing
+	// ? Delete all existing slash commands
 
-	// ? Commands
+	const slashCommands = await interaction.getApplicationCommands(process.guild.id);
+	await Promise.all(slashCommands.map(cmd => interaction.deleteApplicationCommand(cmd.id, process.guild.id)))
 
+	console.log('\n! Commands');
+	
 	for (const file of command_files)
 	{
-		success++;
-
-		const module = require(`./commands/${file}`);
+		const command = require(`./commands/${file}`);
 		const name = file.slice(0,-3);
 
-		module.name = name;
+		// ? Set the name to be the same as the script name
+		command.name = name;
+
+		// ? Validate command
+		if(!command.interact)
+		{
+			console.log(`       ✗ interact not found`);
+			continue;
+		}
+
+		// ? Validate slash command
+		if(!command.description)
+		{
+			console.log(`       ✗ description not found`);
+			continue;
+		}
 
 		try 
 		{
-			if(module.initialize(client)) client.interactions.push(name);
-			console.log(` ✓ commands/${file}`);
+			if(command.initialize && command.initialize(client)) 
+				client.interactions.push(name);
+
+			console.log(`   ✓ ${name}`);
+
+			command.available = true;
+
+			// ? Create slash command
+
+			// TODO This may get rate limited
+			await interaction
+				.createApplicationCommand({
+					name: command.name,
+					description: command.description,
+					options: command.options,
+				}, process.guild.id)
+				.then(cmd => {
+					if(cmd.retry_after)
+						console.log(`       ${cmd.message} (${cmd.retry_after})`);
+					else if(cmd.errors)
+						console.log(cmd.errors);
+					else if(cmd.id)
+						console.log(`       /${cmd.name} ${cmd.options.map(v => v.required?`[${v.name}]`:`(${v.name})`).join(' ')}`);
+				})
+				.catch(console.error);
 		} 
 		catch (err) 
 		{
 			failed.push(`${name}.js: ${err.toString()}`);
-			console.log(` ✗ commands/${file}`);
+			console.log(`   ✗ ${name}`);
 		}
 
-		client.commands.set(name, module);
+		client.commands.set(name, command);
 	}
 
-	// ? Features
+	console.log('\n! Features');
 
-	connection.query("SELECT * FROM sherbot WHERE id = '670107546480017409'", (err, res) => {
+	connection.query(`SELECT * FROM sherbot WHERE id = '${process.guild.id}'`, (err, res) => {
 		for (const file of feature_files)
 		{
-			success++;
+			const name = file.slice(0,-3);
 			try 
 			{
 				const module = require(`./features/${file}`);
-				module.initialize(client.guilds.cache.get("670107546480017409"), connection, res[0]);
-				client.features.set(file.slice(0,-3), module);
-				console.log(` ✓ features/${file}`);
+				if(module.initialize) module.initialize(client.guilds.cache.get(process.guild.id), res[0]);
+				client.features.set(name, module);
+				console.log(`   ✓ ${name}`);
 			} 
 			catch (err) 
 			{
 				failed.push(`${file}: ${err.toString()}`);
-				console.log(` ✗ features/${file}`);
+				console.log(`   ✗ ${name}`);
 			}
 		}
-			
-		console.log(`Done initializing\nsuccess: ${success-failed.length}\nfailed: ${failed.length}\n- ${failed.join('\n- ')}`);
+
+		console.log('\nFinished')
+		console.log(`${failed.length?'-':''} ${failed.join('\n- ')}`);
 	});
 });
 
+// // // // // // // // // // // // // // // // // // // // // //
+
 client.on('guildMemberAdd', async member => {
-	if(member.guild.id != '670107546480017409') return;
+	if(member.guild.id != process.guild.id) return;
 	
 	const welcome = welcomes[Math.floor(Math.random() * welcomes.length)].replace(/{user}/g, member.user.username);
 	const description = 
@@ -140,121 +213,80 @@ Get started with dediction here <#679769341058744379> 👑`;
 	member.guild.channels.cache.get('670108784307470337').fetch().then(channel => {
 		channel.send({ embeds: [embed] });
 	});
-})
-
-client.on('messageCreate', async message =>{
-    if(message.author.id == '712429527321542777') return;
-
-	executeFeatures(message);
-
-	executeCommands(message);
 });
 
-const ids = ['logic', 'what-am-i-riddles', 'who-is-it-riddles', 'who-am-i-riddles', 
-			 'math-riddles', 'best-riddles', 'riddles-for-adults', 'difficult-riddles', 'brain-teasers']
+client.on('messageCreate', async message =>{
+    if(message.author.bot) return;
 
-client.on('interactionCreate', async (interaction) => {
-    try{
-		const arr = ids.filter(id => interaction.customId.includes(id));
-
-		if(arr.length > 0)
-		{
-			// ! This is size 1 so loop cancels out
-			for (const v of client.interactions)
-				// client.commands.at(v).interact(arr[0], interaction); // Used at() because v was an int?
-				client.commands.get(v).interact(arr[0], interaction);
-		}
-    }
-    catch(err){
-		logError(err);
-    }
-})
-
-// // // // // // // // // // // // // // // // // // // // // //
-
-function executeFeatures(message)
-{
 	client.features.each(feature => {
 		if(!feature.tick) return;
 		try {
 			feature.tick(message);
-		} catch (err) {
-			logError(err);
+		} catch (error) {
+			process.logError(error);
 		}
 	});
-}
+});
 
-function executeCommands(message)
-{
-	if(message.content.slice(0, prefix.length).toLowerCase() != prefix) 
-		return;
-	
-	const cmd = message.content.slice(prefix.length).split(" ")[0].toLowerCase();
-	
-	message.content = message.content.slice(cmd.length + prefix.length + 1);
+client.on('interactionCreate', async (interaction) => {
 
-    client.commands.each(module => {
-		if(!module.commands.includes(cmd)) 
-			return;
+	if (interaction.isChatInputCommand())
+		return handleSlashCommands(interaction);
 
-		if(module.ids && !module.ids.includes(message.author.id))
-			return;
+	// ? Handle button presses
+	// TODO This is dodgy
 
-		if(module.role && message.member.id !== process.env.ownerid && !message.member.roles.cache.has(module.role))
-			return;
-
-        if(module.flags)
-        {
-			executeCommandWithFlags(module, message);
-		}
-        else
-		{
-			const embed = new EmbedBuilder().setColor(message.member.roles.color.color);
-			const args = message.content?.trim().split(" ") || [];
-
-			try {
-				module.execute(message, embed, args, cmd);
-			} catch (err) {
-				try {
-					module.execute(message, embed, args);
-				} catch (err) { 
-					logError(err);
-				}
-			}
-		}
-    })
-}
-
-function executeCommandWithFlags(module, message)
-{
     try {
-		const dms = message.channel.type == 'dm';
- 
-		if(dms && !module.flags.includes("dms")) 
-			return;
+		const arr = ['logic', 'what-am-i-riddles', 'who-is-it-riddles', 'who-am-i-riddles', 'math-riddles', 'best-riddles', 'riddles-for-adults', 'difficult-riddles', 'brain-teasers']
+			.filter(id => interaction.customId.includes(id));
 
-		let mention = message.mentions.members.first();
+		if(arr.length > 0)
+		{
+			for (const v of client.interactions)
+				client.commands.get(v).buttonPress(arr[0], interaction);
+		}
+    }
+    catch(error) {
+		process.logError(error);
+    }
+});
 
-		if(module.flags.includes("mention") && (mention === undefined || mention === null))
-			return;
+async function handleSlashCommands(interaction)
+{
+	if(!client.commands.has(interaction.commandName))
+	{
+		// ! Impossible to get here unless api changes
+		return interaction.reply({ content: `☹️ Sorry, that command does not exist.`, ephemeral: true });
+	}
+
+	const command = client.commands.get(interaction.commandName);
+
+	if(!command.available)
+	{
+		return interaction.reply({ content: `☹️ Sorry, this command is currently unavailable. Please try again later!`, ephemeral: true });
+	}
+
+	if(command.roles && !interaction.member.roles.cache.hasAny(...command.roles))
+	{
+		return interaction.reply({ content: `☹️ Sorry! Only ${command.roles.map(v => interaction.member.guild.roles.cache.get(v)).join(', ')} may use this command.`, ephemeral: true });
+	}
+	
+	try {
+		if(command.defer) interaction.deferReply({ephemeral: command.ephemeral});
+
+		const out = (await command.interact(interaction)) || { content: '☹️ Sorry, an error occured. Please try again later!', ephemeral: true};
+		const options = out.content || out.embeds? out : { 
+			content: out instanceof EmbedBuilder? '' : out, 
+			embeds: out instanceof EmbedBuilder? [out] : []
+		};
+
+		options.ephemeral = command.ephemeral || out.ephemeral;
 		
-		const embed = new EmbedBuilder().setColor(message.member.roles.color.color);
-				
-		if(module.flags.includes("noargs"))
-		{
-			module.execute(message, embed)
-		}
-		else if(module.flags.includes("mention"))
-		{
-			module.execute(message, embed, mention)
-		}
-		else 
-		{
-			let args = message.content.trim().split(" ");
-			if(!message.content) args = [];
-			module.execute(message, embed, args)
-		}
-	} catch (err) {
-		logError(err);
+		console.log(options);
+
+		if(command.defer) interaction.followUp(options);
+		else interaction.reply(options);
+	} catch (error) {
+		process.logError(error);
 	}
 }

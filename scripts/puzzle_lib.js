@@ -10,33 +10,31 @@ const icon = 'https://cdn3.iconfinder.com/data/icons/brain-games/1042/Puzzle-gre
 
 class PuzzleLibrary
 {
-    async send(channel)
+    async fetch()
     {
         this.puzzle = await PuzzleUtils.fetchRiddle(this.uri, this.pages);
         this.cache.set(this.puzzle.index, this.puzzle);
 
-        channel.send(
-            { 
-                embeds: [
-                    new EmbedBuilder()
-                        .setColor(Colors.Orange)
-                        .setAuthor({
-                            name: this.puzzle.title, 
-                            icon_url: icon
-                        })
-                        .setDescription(this.puzzle.riddle)
-                ], 
-                components: [
-                    new ActionRowBuilder()
-                        .addComponents(
-                            new ButtonBuilder()
-                                .setCustomId(this.id + this.puzzle.index)
-                                .setLabel('View solution')
-                                .setStyle('Danger'),
-                        )
-                ] 
-            }
-        )
+        return { 
+            embeds: [
+                new EmbedBuilder()
+                    .setColor(Colors.Orange)
+                    .setAuthor({
+                        name: this.puzzle.title, 
+                        icon_url: icon
+                    })
+                    .setDescription(this.puzzle.riddle)
+            ], 
+            components: [
+                new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(this.id + this.puzzle.index)
+                            .setLabel('View solution')
+                            .setStyle('Danger'),
+                    )
+            ] 
+        }
     }
 
     async interact(interaction)
@@ -88,7 +86,7 @@ class PuzzleLibrary
         (async () => {
             this.puzzle = await PuzzleUtils.fetchRiddle(this.uri, this.pages);
             this.cache.set(this.puzzle.index, this.puzzle);
-			console.log(` ✓ loaded lib ${this.id}`);
+			console.log(` # cached ${uri}`);
         })();
     }
 }

@@ -1,12 +1,9 @@
 module.exports =
 {
-    initialize : function(guild, con, data) { },
-
     tick : async function(message)
     {
-        if(message.member.id != process.env.ownerid) return
+        if(!(message.member?.id === process.ownerid)) return
         if(message.content.length < 3 || message.member == null) return false;
-		if(message.member.id != process.env.ownerid) return false;
 
 		const args = message.content.toLowerCase().trim().split(' ');
 		const cmd = args[0];

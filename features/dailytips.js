@@ -12,14 +12,14 @@ var channel;
 
 class DailyTips 
 {
-    static initialize(guild, con, data) 
+    static initialize(guild, { dt_page, dt_index }) 
     {
         rule.hour = 12;
         rule.minute = 0;
         rule.tz = 'Etc/UTC';
 
-        page = data.dt_page;
-        tipIndex = data.dt_index;
+        page = dt_page;
+        tipIndex = dt_index;
         channel = guild.channels.cache.get('740552730250313809'); 
         
         scheduleJob(rule, () => {
@@ -81,10 +81,7 @@ class DailyTips
             });
         });
 
-        process.conn.query(`UPDATE sherbot SET dt_page = ${page}, dt_index = ${tipIndex} WHERE id = 670107546480017409`, (err) => {
-            if(!err) return;
-            channel.guild.channels.get('718576277329674361').send({ content: "@HenBOMB.#0274\n**Failed to update data on `dailytips.js`** (dt_page, dt_index)" })
-        });
+        process.conn.query(`UPDATE sherbot SET dt_page = ${page}, dt_index = ${tipIndex} WHERE id = 670107546480017409`, (err) => {});
     }
 }
 

@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require('discord.js');
-const CLI = require('../scripts/cli');
+const CLI = require('../scripts/_cli');
 
 //?rr [new, edit] (#channel, messageid) --{ghost, clear, delete, desc, role [@role] [emoji]}
 

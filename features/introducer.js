@@ -1,7 +1,5 @@
 module.exports =
 {
-    initialize : function(guild, con, data) { },
-    
     tick : async function(message)
     {
         if(message.channel.id != '670108903224377354') 

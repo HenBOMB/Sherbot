@@ -2,15 +2,20 @@ const { EmbedBuilder, Colors } = require('discord.js');
 
 const House = require("../scripts/house");
 const Member = require("../scripts/member");
-const CLI = require("../scripts/cli");
+const CLI = require("../scripts/_cli");
 
 //?house [name, join, leave] (name) --{name, motto, create, delete, view, color, banner}
 
 module.exports =
 {
-    commands: ['house', 'houses'],
+    defer: true,
+    
+	interact : async function ({ channel, options })
+    {
+        
+    },
 
-	execute : async function (message, embed, _args, cmd) 
+	_interact : async function (message, embed, _args, cmd) 
     {
         const send = (color, desc) => {
             return message.channel.send({ embeds: [new EmbedBuilder().setColor(color).setDescription(desc)] });
@@ -152,6 +157,4 @@ module.exports =
             cli.log();
         }
     },
-
-    initialize : function(conn) { }
 };

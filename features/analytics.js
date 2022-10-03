@@ -6,8 +6,6 @@ const channels = ['852185253279170572', '852469428759298058', '85218522543279310
 
 module.exports =
 {
-    initialize : function(guild, con, data) { },
-    
     tick : async function(message)
     {
         const member = await Member.load(message.author.id);
@@ -16,6 +14,7 @@ module.exports =
 
         if(member.house)
         {
+            const house = House.get(member.house);
             House.edit(member.house, 'xp', house.xp + Math.ceil(Math.random() * 10) + 20);
             member.msg_house++;
         }
