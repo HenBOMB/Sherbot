@@ -6,7 +6,7 @@ module.exports =
     initialize : function(guild, data) 
     {
         // ? Exclude the info channel and make sure its a jail channel
-        const getChannels = () => process.guild.channels.cache.filter(v => v.parentId === '1025816106985852948' && v.id !== '1026245265558077520');
+        const getChannels = () => process.guild.channels.cache.filter(v => v.parentId === '1025816106985852948' && v.name.includes('cell'));
         
         // ? Enables sending messages after 6:30am
 

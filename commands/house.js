@@ -10,9 +10,190 @@ module.exports =
 {
     defer: true,
     
+    guildid: '643440133881856019',
+
+    description: "House utility commands.",
+
+    options: [
+        {
+            type: 1,
+            name: "join",
+            description: "Join and be part of a server House!",
+            options: [
+                {
+                    type: 3,
+                    name: "id",
+                    description: "The ID of the house to join (/house list)",
+                    required: true
+                }
+            ]
+        },
+        {
+            type: 1,
+            name: "leave",
+            description: "Leave and abandon a house",
+            options: [
+                {
+                    type: 3,
+                    name: "id",
+                    description: "The ID of the house to abandon (/house list)",
+                    required: true
+                }
+            ]
+        },
+        {
+            type: 1,
+            name: "info",
+            description: "Display information about your house or another",
+            options: [
+                {
+                    type: 3,
+                    name: "id",
+                    description: "The ID of the house to view. (/house list) (optional)"
+                }
+            ]
+        },
+        {
+            type: 1,
+            name: "create",
+            description: "Create your own house (settings can be changed later)",
+            options: [
+                {
+                    type: 3,
+                    name: "name",
+                    description: "Super cool house name of your choice",
+                    required: true
+                },
+                {
+                    type: 3,
+                    name: "description",
+                    description: "Brief description about your House for others to judge",
+                    required: true
+                },
+                {
+                    type: 3,
+                    name: "motto",
+                    description: "Outshine other houses with a unique House motto (optional)"
+                },
+                {
+                    type: 5,
+                    name: "invite_only",
+                    description: "Require others to join via an invite? (optional)"
+                },
+                {
+                    type: 3,
+                    name: "banner_url",
+                    description: "A link to an image or gif (optional)"
+                },
+                {
+                    type: 11,
+                    name: "banner_file",
+                    description: "An image or gif to use (optional)"
+                }
+            ]
+        },
+        {
+            type: 1,
+            name: "kick",
+            description: "Kick a member from your House",
+            options: [
+                {
+                    type: 6,
+                    name: "member",
+                    description: "Member to kick from the house",
+                    required: true
+                },
+                {
+                    type: 3,
+                    name: "reason",
+                    description: "Reason why they got kicked (optional)"
+                }
+            ]
+        },
+        {
+            type: 1,
+            name: "ban",
+            description: "Ban a member from your House",
+            options: [
+                {
+                    type: 6,
+                    name: "member",
+                    description: "Member to kick from the house",
+                    required: true
+                },
+                {
+                    type: 3,
+                    name: "reason",
+                    description: "Reason why they got kicked (optional)"
+                }
+            ]
+        },
+        {
+            type: 1,
+            name: "invite",
+            description: "Send a server member an invite to your House",
+            options: [
+                {
+                    type: 6,
+                    name: "member",
+                    description: "Member to send the invite to",
+                    required: true
+                },
+                {
+                    type: 3,
+                    name: "message",
+                    description: "Message to send the invite with (optional)"
+                }
+            ]
+        },
+        {
+            type: 1,
+            name: "list",
+            description: "List all the Houses available to join"
+        },
+        {
+            type: 1,
+            name: "edit",
+            description: "House editing utility commands",
+            options: [
+                {
+                    type: 3,
+                    name: "name",
+                    description: "A new name for the House",
+                    required: true
+                },
+                {
+                    type: 3,
+                    name: "description",
+                    description: "A new description for your House",
+                },
+                {
+                    type: 3,
+                    name: "motto",
+                    description: "A new motto for your House",
+                },
+                {
+                    type: 3,
+                    name: "banner_url",
+                    description: "A new url image or gif to use as a banner"
+                },
+                {
+                    type: 11,
+                    name: "banner_file",
+                    description: "A new image or gif to use as a banner"
+                },
+                {
+                    type: 5,
+                    name: "invite_only",
+                    description: "Set your house to invite only?",
+                }
+            ]
+        }
+    ],
+
 	interact : async function ({ channel, options })
     {
-        
+        const command = options.getSubcommand();
     },
 
 	_interact : async function (message, embed, _args, cmd) 

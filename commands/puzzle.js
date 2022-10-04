@@ -43,8 +43,6 @@ module.exports =
         }
     ],
 
-    defer: true,
-
     initialize : function()
     {
         const embed = new EmbedBuilder().setColor(Colors.Orange);

@@ -1,11 +1,6 @@
-const { EmbedBuilder, Colors } = require('discord.js');
-
-// ? /rr [new, edit] (#channel, messageid) --{ghost, clear, delete, desc, role [@role] [emoji]}
-// ? /rr edit 1020033297209892965 --role @member :emote: --role @arg 🚦 --ghost
+const { EmbedBuilder } = require('discord.js');
 
 const reactionRoles = { };
-
-// TODO emoji cannot be stored in db. Find workaround.
 
 module.exports =
 {
@@ -36,7 +31,7 @@ module.exports =
             description: "Adds a reaction role to the message.",
             options: [
                 {
-                    type: 4,
+                    type: 3,
                     name: "id",
                     description: "The reaction role message to target.",
                     required: true
@@ -61,7 +56,7 @@ module.exports =
             description: "Sets a new title or description of reaction role message.",
             options: [
                 {
-                    type: 4,
+                    type: 3,
                     name: "id",
                     description: "The reaction role message to target.",
                     required: true
@@ -89,13 +84,8 @@ module.exports =
     {
         process.conn.query(`SELECT * FROM reaction_roles`, (err, res) => {
             res.forEach(data => {
-                reactionRoles[data.id] = { };
-
-                const emojis = data.emojis.split(',');
-                const roles = data.roles.split(',');
-
-                for (let i = 0; i < emojis.length; i++)
-                    reactionRoles[data.id][emojis[i]] = roles[i];
+                // ! Somtimes the first item is empty..
+                reactionRoles[data.id] = data.roles.split(',').filter(v => v.length > 3);
             });
         });
 
@@ -107,57 +97,56 @@ module.exports =
             process.conn.query(`DELETE FROM reaction_roles WHERE id = '${id}'`, (err, res) => { });
         });
         
-        client.on('messageReactionAdd', async ({ emoji, message, me }, user) => {
-            // console.log(message.reactions.cache.map(v => v.emoji.name));
-            
+        client.on('messageReactionAdd', async ({ message, me, emoji }, user) => {
             if(me || !reactionRoles[message.id]) return;
-            
-            const role = reactionRoles[message.id][emoji.name];
-            const member = await message.guild.members.fetch(user.id);
-            
-            await member.roles.add(role);
+            const i = message.reactions.cache.map(v => v.emoji.name).indexOf(emoji.name);
+            if(i < 0) return;
+            const roleid = reactionRoles[message.id][i];
+            if(!roleid) return;
+            (await message.guild.members.fetch(user.id)).roles.add(roleid);
         });
         
-        client.on('messageReactionRemove', async ({ emoji, message, me }, user) => {
+        client.on('messageReactionRemove', async ({ message, me, emoji }, user) => {
             if(me || !reactionRoles[message.id]) return;
-            
-            const role = reactionRoles[message.id][emoji.name];
-            const member = await message.guild.members.fetch(user.id);
-            
-            await member.roles.remove(role);
+            const i = message.reactions.cache.map(v => v.emoji.name).indexOf(emoji.name);
+            if(i < 0) return;
+            const roleid = reactionRoles[message.id][i];
+            if(!roleid) return;
+            (await message.guild.members.fetch(user.id)).roles.remove(roleid);
         });
     },
 
     interact : async function({ options, channel })
     {
-        let message = options.getInteger('id')? await channel.messages.fetch(`${options.getInteger('id')}`) : null;
-        let embed = message? message.embeds[0] : new EmbedBuilder();
+        const id = options.getString('id');
+        const message = id? await channel.messages.fetch(id).catch(() => {}) : null;
+        
+        if(id && !message) return `Invalid message ID: ${id}`;
+
+        if(message && !reactionRoles[id]) return `That ID does not belong to a reaction role message.`;
 
         switch (options.getSubcommand()) {
             case 'create':
-                embed = embed
+                embed = new EmbedBuilder()
                     .setTitle(options.getString('title'))
                     .setDescription(options.getString('description')||'ㅤ');
-                message = await channel.send({ embeds: [embed] });
-                return `Message created with ID: ${message.id}`;
+                const msg = await channel.send({ embeds: [embed] });
+                reactionRoles[msg.id] = [];
+                process.conn.query(`INSERT INTO reaction_roles (id,roles) VALUES ('${msg.id}','')`, (err, res) => { });
+                return `Message created with ID: ${msg.id}`;
 
             case 'add':
-                process.conn.query(`SELECT roles, emojis FROM reaction_roles WHERE id='${message.id}'`, (err, res) => {
-                    const roles = res[0].roles.split(',');
-                    const emojis = res[0].roles.split(',');
-                    roles.push(options.getRole('role').id);
-                    emojis.push(options.getString('emoji'));
-                    process.conn.query(`UPDATE reaction_roles SET roles = '${roles.join(',')}', emojis = '${emojis.join(',')}'`, (err, res) => { });
-                });
+                reactionRoles[id].push(options.getRole('role').id);
+                process.conn.query(`UPDATE reaction_roles SET roles = '${reactionRoles[id].join(',')}'`, (err, res) => { });
                 await message.react(options.getString('emoji'));
-                return `Added rr ${options.getRole('role')} with emoji ${options.getString('emoji')}`;
+                return `Added RR ${options.getRole('role')} with ${options.getString('emoji')}`;
 
             case 'edit':
-                embed = embed
-                    .setDescription(options.getString('description'))
-                    .setTitle(options.getString('title'));
-                await channel.edit({ embeds: [embed] });
-                return `Successfully edited rr message.`;
+                embed = new EmbedBuilder(message.embeds[0].data)
+                    .setDescription(options.getString('description') || message.embeds[0].data.description)
+                    .setTitle(options.getString('title') || message.embeds[0].data.title);
+                await message.edit({ embeds: [embed] });
+                return `Successfully edited RR message.`;
         }
     }
 };

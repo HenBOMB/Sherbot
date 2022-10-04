@@ -57,7 +57,8 @@ module.exports =
 
     ephemeral: true,
 
-    // ? i think https://discord.js.org/#/docs/discord.js/main/class/ChatInputCommandInteraction
+    // ? https://discord.js.org/#/docs/discord.js/main/class/CommandInteractionOptionResolver
+    // ? https://discord.js.org/#/docs/discord.js/main/class/ChatInputCommandInteraction
     interact : async function({ member, options })
     {
         const inmate = options.getMentionable('user');
@@ -65,7 +66,7 @@ module.exports =
         const duration = new Date();
         duration.setDate(duration.getDate() + options.getInteger('duration'));
         
-        const channels = member.guild.channels.cache.filter(v => v.parentId === '1025816106985852948' && v.id !== '1026245265558077520');
+        const channels = member.guild.channels.cache.filter(v => v.parentId === '1025816106985852948' && v.name.includes('cell'));
 
         // ! If they are already in jail, skip
         if (await new Promise(resolve => process.conn.query(`SELECT * FROM jail WHERE id = '${inmate.id}'`, (err, res) => {

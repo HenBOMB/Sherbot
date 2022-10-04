@@ -2,7 +2,7 @@ const fs = require("fs");
 
 const mysql = require('mysql');
 
-const { Collection, Client, GatewayIntentBits, EmbedBuilder, Colors } = require('discord.js');
+const { Collection, Client, GatewayIntentBits, EmbedBuilder, Partials, Colors } = require('discord.js');
 
 const { DiscordInteractions } = require("slash-commands");
 
@@ -14,12 +14,13 @@ const connection = mysql.createConnection(db_settings);
 
 const client = new Client({
 	intents: [
+		GatewayIntentBits.MessageContent, 
 		GatewayIntentBits.Guilds, 
 		GatewayIntentBits.GuildMembers,
 		GatewayIntentBits.GuildMessages, 
-		GatewayIntentBits.MessageContent, 
-		GatewayIntentBits.GuildMessageReactions],
-	partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
+		GatewayIntentBits.GuildMessageReactions
+	],
+	partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
 const interaction = new DiscordInteractions({
@@ -33,6 +34,8 @@ client.interactions = [];
 client.features = new Collection();
 
 client.commands = new Collection();
+
+const refreshSlashCommands = false;
 
 const welcomes = fs.readFileSync("./data/welcomes.txt", 'utf8').split("\n");
 
@@ -97,8 +100,12 @@ client.once('ready', async () => {
 
 	// ? Delete all existing slash commands
 
-	const slashCommands = await interaction.getApplicationCommands(process.guild.id);
-	await Promise.all(slashCommands.map(cmd => interaction.deleteApplicationCommand(cmd.id, process.guild.id)))
+	if(refreshSlashCommands)
+	{
+		const slashCommands = await interaction.getApplicationCommands(process.guild.id);
+		await Promise.all(slashCommands.map(cmd => interaction.deleteApplicationCommand(cmd.id, process.guild.id)))
+		console.log('\n! Refreshed slash commands');
+	}
 
 	console.log('\n! Commands');
 	
@@ -135,24 +142,27 @@ client.once('ready', async () => {
 
 			// ? Create slash command
 
-			// TODO This may get rate limited
-			await interaction
-				.createApplicationCommand({
-					name: command.name,
-					description: command.description,
-					options: command.options,
-				}, process.guild.id)
-				.then(cmd => {
-					if(cmd.retry_after)
-						console.log(`       ! ${cmd.message} (${cmd.retry_after})`);
-					else if(cmd.errors)
-						console.log(`       ✗ ${JSON.stringify(cmd.errors, null, 2)}`);
-					else if(cmd.id)
-						console.log(`       /${cmd.name} ${cmd.options? cmd.options.map(v => v.required?`[${v.name}]`:`(${v.name})`).join(' ') : ''}`);
-					else
-						console.log(`       ? ${cmd.message})`);
-				})
-				.catch(console.error);
+			if(refreshSlashCommands)
+			{
+				// TODO This will get rate limited if abused
+				await interaction
+					.createApplicationCommand({
+						name: command.name,
+						description: command.description,
+						options: command.options,
+					}, command.guildid || process.guild.id)
+					.then(cmd => {
+						if(cmd.retry_after)
+							console.log(`       ! ${cmd.message} (${cmd.retry_after})`);
+						else if(cmd.errors)
+							console.log(`       ✗ ${JSON.stringify(cmd.errors, null, 2)}`);
+						else if(cmd.id)
+							console.log(`       /${cmd.name} ${cmd.options? cmd.options.map(v => v.required?`[${v.name}]`:`(${v.name})`).join(' ') : ''}`);
+						else
+							console.log(`       ? ${cmd.message})`);
+					})
+					.catch(console.error);
+			}
 		} 
 		catch (err) 
 		{
@@ -193,21 +203,24 @@ client.once('ready', async () => {
 client.on('guildMemberAdd', async member => {
 	if(member.guild.id != process.guild.id) return;
 	
-	const welcome = welcomes[Math.floor(Math.random() * welcomes.length)].replace(/{user}/g, member.user.username);
-	const description = `🎊 Welcome ${member} to The Art of Deduction! 🎊\n Head on over to <#906149558801813605> to get verified!`;
-	
-  	let th = 'th';
-	const str = member.guild.memberCount.toString();
-	if(str[str.length-1] == '1') th = 'st';
-	else if(str[str.length-1] == '2') th = 'nd';
-	else if(str[str.length-1] == '3') th = 'rd';
+	const th = (() => {
+		switch (member.guild.memberCount.toString().slice(-1)) {
+			case 1:  return 'st';
+			case 2:  return 'nd';
+			case 3:  return 'rd';
+			default: return 'th';
+		}
+	})();
 
 	const embed = new EmbedBuilder().setColor(member.guild.members.cache.get('712429527321542777').roles.color.color)
-		.setTitle(welcome)
-		.setDescription(description)
+		.setTitle(welcomes[Math.floor(Math.random() * welcomes.length)].replace(/{user}/g, member.user.username))
+		.setDescription(`🎊 Welcome ${member} to The Art of Deduction! 🎊\n Head on over to <#906149558801813605> to get verified!`)
 		.setThumbnail(member.user.displayAvatarURL())
 		.setTimestamp()
-		.setFooter(`Joined as the ${member.guild.memberCount}${th} member`, member.user.displayAvatarURL());
+		.setFooter({
+			text: `Joined as the ${member.guild.memberCount}${th} member`, 
+			icon_url : member.user.displayAvatarURL()
+		});
 	
 	member.guild.channels.cache.get('670108784307470337').fetch().then(channel => {
 		channel.send({ embeds: [embed] });
@@ -278,7 +291,7 @@ client.on('interactionCreate', async (interaction) => {
 
 async function handleSlashCommands(interaction)
 {
-	const sorryErrOcc = { content: '☹️ Sorry, an error occured. Please try again later!', ephemeral: true };
+	const sorryErrOcc = { content: '☹️ Sorry, an error occured. Please contact a <@&670114268858810369> or <@&742750595345022978>.', ephemeral: true };
 
 	if(!client.commands.has(interaction.commandName))
 	{
@@ -301,16 +314,18 @@ async function handleSlashCommands(interaction)
 	
 	// ? Run the command interaction
 
-	if(command.defer) interaction.deferReply({ephemeral: command.ephemeral});
-
-	const reply = command.defer? interaction.followUp : interaction.reply;
+	await interaction.deferReply({ephemeral: command.ephemeral});
 
 	try {
 		// TODO Theres a weird bug where if defer and ephmeral are true, then when returning an embed, it crashes.. (InteractionNotReplied)
 
 		const out = (await command.interact(interaction));
 
-		if(!out) throw TypeError(`Command returned ${out}`);
+		if(!out) 
+		{
+			await interaction.editReply(sorryErrOcc);
+			return;
+		}
 
 		const options = out.content || out.embeds? out : { 
 			content: out instanceof EmbedBuilder? '' : out, 
@@ -319,10 +334,10 @@ async function handleSlashCommands(interaction)
 
 		options.ephemeral = command.ephemeral || out.ephemeral;
 
-		reply(options);
+		await interaction.editReply(options);
 	} 
 	catch (error) {
 		process.logError(error);
-		reply(sorryErrOcc);
+		await interaction.editReply(sorryErrOcc);
 	} 
 }
