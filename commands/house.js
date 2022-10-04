@@ -1,8 +1,14 @@
-const { EmbedBuilder, Colors } = require('discord.js');
+const { 
+    EmbedBuilder, Colors, 
+    SlashCommandBuilder, 
+    SlashCommandSubcommandBuilder, 
+    SlashCommandStringOption, 
+    SlashCommandBooleanOption, 
+    SlashCommandAttachmentOption,
+    SlashCommandUserOption
+} = require('discord.js');
 
-const House = require("../scripts/house");
 const Member = require("../scripts/member");
-const CLI = require("../scripts/_cli");
 
 //?house [name, join, leave] (name) --{name, motto, create, delete, view, color, banner}
 
@@ -10,192 +16,200 @@ module.exports =
 {
     defer: true,
     
-    guildid: '643440133881856019',
+    guildId: '643440133881856019',
 
-    description: "House utility commands.",
+    data: new SlashCommandBuilder()
+        .setName('house')
+        .setDescription('House utility commands.')
+        // ? join [id]
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName('join')
+                .setDescription('Join and be part of a server House!')
+                // ? id
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('id')
+                        .setDescription('The ID of the house to join')
+                        .setAutocomplete(true)
+                        .setRequired(true)
+                )
+        )
+        // ? leave
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName('leave')
+                .setDescription('Leave and abandon the house you are currently in')
+        )
+        // ? rank
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName('rank')
+                .setDescription('List all Houses by ranking and show stats')
+        )
+        // ? info (id)
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName('info')
+                .setDescription('Display information about your house or another')
+                // ? id
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('id')
+                        .setDescription('The ID of the house to join')
+                        .setAutocomplete(true)
+                )
+        )
+        // ? create [name] [description] (motto) (invite_only) (banner_url) (banner_file)
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName('create')
+                .setDescription('Create your own house (edits can be made later)')
+                //  ? name
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('name')
+                        .setDescription('Super cool house name of your choice')
+                        .setRequired(true)
+                )
+                // ? description
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('description')
+                        .setDescription('Brief description about your House for others to analyze')
+                        .setRequired(true)
+                )
+                // ? motto
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('motto')
+                        .setDescription('Outshine other houses with a unique House motto (optional)')
+                )
+                // ? invite_only
+                .addBooleanOption(
+                    new SlashCommandBooleanOption()
+                        .setName('invite_only')
+                        .setDescription('Require others to join via an invite? (optional)')
+                )
+                // ? banner_url
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('banner_url')
+                        .setDescription('Link to an image or gif (optional)')
+                )
+                // ? banner_file
+                .addAttachmentOption(
+                    new SlashCommandAttachmentOption()
+                        .setName('banner_file')
+                        .setDescription('Upload image or gif to use (optional)')
+                )
+        )
+        // ? kick [member] (reason)
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName('kick')
+                .setDescription('Kick a member from your House')
+                //  ? member
+                .addUserOption(
+                    new SlashCommandUserOption()
+                        .setName('member')
+                        .setDescription('Member to kick from the house')
+                        .setRequired(true)
+                )
+                // ? reason
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('reason')
+                        .setDescription('Reason why they got kicked (optional)')
+                )
+        )
+        // ? ban [member] (reason)
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName('ban')
+                .setDescription('Ban a member from your House')
+                //  ? member
+                .addUserOption(
+                    new SlashCommandUserOption()
+                        .setName('member')
+                        .setDescription('Member to ban from the house')
+                        .setRequired(true)
+                )
+                // ? reason
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('reason')
+                        .setDescription('Reason why they got banned (optional)')
+                )
+        )
+        // ? invite [member] (message)
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName('invite')
+                .setDescription('Send a member an invite to your House')
+                // ? member
+                .addUserOption(
+                    new SlashCommandUserOption()
+                        .setName('member')
+                        .setDescription('Member to send the invite to')
+                        .setRequired(true)
+                )
+                // ? message
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('message')
+                        .setDescription('Message to send the invite with (optional)')
+                )
+        )
+        // ? edit (name) (description) (motto) (invite_only) (banner_url) (banner_file) 
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName('edit')
+                .setDescription('Send a member an invite to your House')
+                // ? name
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('name')
+                        .setDescription('A new name for the House')
+                )
+                // ? description
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('description')
+                        .setDescription('A new description for the House')
+                )
+                // ? motto
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('motto')
+                        .setDescription('A new motto for the House')
+                )
+                // ? invite_only
+                .addBooleanOption(
+                    new SlashCommandBooleanOption()
+                        .setName('invite_only')
+                        .setDescription('Set your house to invite only?')
+                )
+                // ? banner_url
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('banner_url')
+                        .setDescription('A new url image or gif to use as a banner')
+                )
+                // ? banner_file
+                .addAttachmentOption(
+                    new SlashCommandAttachmentOption()
+                        .setName('banner_file')
+                        .setDescription('A new image or gif to use as a banner')
+                )
+        )
+    ,
 
-    options: [
-        {
-            type: 1,
-            name: "join",
-            description: "Join and be part of a server House!",
-            options: [
-                {
-                    type: 3,
-                    name: "id",
-                    description: "The ID of the house to join (/house list)",
-                    required: true
-                }
-            ]
-        },
-        {
-            type: 1,
-            name: "leave",
-            description: "Leave and abandon a house",
-            options: [
-                {
-                    type: 3,
-                    name: "id",
-                    description: "The ID of the house to abandon (/house list)",
-                    required: true
-                }
-            ]
-        },
-        {
-            type: 1,
-            name: "info",
-            description: "Display information about your house or another",
-            options: [
-                {
-                    type: 3,
-                    name: "id",
-                    description: "The ID of the house to view. (/house list) (optional)"
-                }
-            ]
-        },
-        {
-            type: 1,
-            name: "create",
-            description: "Create your own house (settings can be changed later)",
-            options: [
-                {
-                    type: 3,
-                    name: "name",
-                    description: "Super cool house name of your choice",
-                    required: true
-                },
-                {
-                    type: 3,
-                    name: "description",
-                    description: "Brief description about your House for others to judge",
-                    required: true
-                },
-                {
-                    type: 3,
-                    name: "motto",
-                    description: "Outshine other houses with a unique House motto (optional)"
-                },
-                {
-                    type: 5,
-                    name: "invite_only",
-                    description: "Require others to join via an invite? (optional)"
-                },
-                {
-                    type: 3,
-                    name: "banner_url",
-                    description: "A link to an image or gif (optional)"
-                },
-                {
-                    type: 11,
-                    name: "banner_file",
-                    description: "An image or gif to use (optional)"
-                }
-            ]
-        },
-        {
-            type: 1,
-            name: "kick",
-            description: "Kick a member from your House",
-            options: [
-                {
-                    type: 6,
-                    name: "member",
-                    description: "Member to kick from the house",
-                    required: true
-                },
-                {
-                    type: 3,
-                    name: "reason",
-                    description: "Reason why they got kicked (optional)"
-                }
-            ]
-        },
-        {
-            type: 1,
-            name: "ban",
-            description: "Ban a member from your House",
-            options: [
-                {
-                    type: 6,
-                    name: "member",
-                    description: "Member to kick from the house",
-                    required: true
-                },
-                {
-                    type: 3,
-                    name: "reason",
-                    description: "Reason why they got kicked (optional)"
-                }
-            ]
-        },
-        {
-            type: 1,
-            name: "invite",
-            description: "Send a server member an invite to your House",
-            options: [
-                {
-                    type: 6,
-                    name: "member",
-                    description: "Member to send the invite to",
-                    required: true
-                },
-                {
-                    type: 3,
-                    name: "message",
-                    description: "Message to send the invite with (optional)"
-                }
-            ]
-        },
-        {
-            type: 1,
-            name: "list",
-            description: "List all the Houses available to join"
-        },
-        {
-            type: 1,
-            name: "edit",
-            description: "House editing utility commands",
-            options: [
-                {
-                    type: 3,
-                    name: "name",
-                    description: "A new name for the House",
-                    required: true
-                },
-                {
-                    type: 3,
-                    name: "description",
-                    description: "A new description for your House",
-                },
-                {
-                    type: 3,
-                    name: "motto",
-                    description: "A new motto for your House",
-                },
-                {
-                    type: 3,
-                    name: "banner_url",
-                    description: "A new url image or gif to use as a banner"
-                },
-                {
-                    type: 11,
-                    name: "banner_file",
-                    description: "A new image or gif to use as a banner"
-                },
-                {
-                    type: 5,
-                    name: "invite_only",
-                    description: "Set your house to invite only?",
-                }
-            ]
-        }
-    ],
-
-	interact : async function ({ channel, options })
+	interact ({ channel, options })
     {
         const command = options.getSubcommand();
     },
-
+    
 	_interact : async function (message, embed, _args, cmd) 
     {
         const send = (color, desc) => {

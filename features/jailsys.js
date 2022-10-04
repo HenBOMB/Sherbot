@@ -1,9 +1,8 @@
 const { Colors } = require('discord.js');
 const { scheduleJob, RecurrenceRule } = require('node-schedule');
 
-module.exports =
-{
-    initialize : function(guild, data) 
+module.exports = {
+    initialize() 
     {
         // ? Exclude the info channel and make sure its a jail channel
         const getChannels = () => process.guild.channels.cache.filter(v => v.parentId === '1025816106985852948' && v.name.includes('cell'));

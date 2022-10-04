@@ -1,9 +1,7 @@
 const Member = require("../scripts/member");
-const House = require("../scripts/house");
 
-module.exports =
-{
-    tick : async function({ author, channel, content })
+module.exports = {
+    async tick({ author, channel, content })
     {
         const member = await Member.load(author.id);
 
@@ -11,8 +9,9 @@ module.exports =
 
         if(member.house)
         {
-            const house = House.get(member.house);
-            House.edit(member.house, 'xp', house.xp + Math.ceil(Math.random() * 10) + 20);
+            const house = process.houses[member.house];
+            house.xp += Math.ceil(Math.random() * 10) + 20;
+            house.save();
             member.msg_house++;
         }
 

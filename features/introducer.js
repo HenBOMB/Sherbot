@@ -1,6 +1,5 @@
-module.exports =
-{
-    tick : async function(message)
+module.exports = {
+    async tick(message)
     {
         if(message.channel.id != '670108903224377354') 
             return;

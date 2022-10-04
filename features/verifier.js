@@ -1,8 +1,7 @@
 const { Colors } = require('discord.js');
 
-module.exports =
-{
-    tick : async function(message)
+module.exports = {
+    async tick(message)
     {
         if(message.member == null) 
             return;

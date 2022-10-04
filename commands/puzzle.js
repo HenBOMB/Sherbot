@@ -1,68 +1,55 @@
-const { EmbedBuilder, Colors } = require('discord.js');
+const { 
+    EmbedBuilder, Colors, 
+    SlashCommandBuilder, 
+} = require('discord.js');
+
 const PuzzleLibrary = require('../scripts/puzzle_lib');
 
 const puzzles = [];
+
+const puzzleMap = {
+    'logic-puzzles' : 10,
+    'what-am-i-riddles' : 3,
+    'who-is-it-riddles' : 3,
+    'who-am-i-riddles' : 3,
+    'math-riddles' : 17,
+    'best-riddles' : 10,
+    'riddles-for-adults' : 12,
+    'difficult-riddles' : 17,
+    'brain-teasers' : 29,
+}
 
 // ? https://www.ahapuzzles.com/
 
 module.exports =
 {
-    description: "Get a random puzzle!",
-
-    options: [
-        {
-            type: 3,
-            name: "category",
-            description: "Puzzle type",
-            choices: [
-                {
-                    name: "Riddle",
-                    value: "riddle"
-                },
-                {
-                    name: "Teaser",
-                    value: "teaser"
-                },
-                {
-                    name: "Math",
-                    value: "math"
-                },
-                {
-                    name: "What am I?",
-                    value: "whatami"
-                },
-                {
-                    name: "Who is it?",
-                    value: "whoisit"
-                },
-                {
-                    name: "Who Am I?",
-                    value: "whoami"
-                }
-            ]
-        }
-    ],
-
-    initialize : function()
+    data: new SlashCommandBuilder()
+        .setName('puzzle')
+        .setDescription('Get a random puzzle from 6+ different categories!')
+        // ? puzzle (category)
+        .addStringOption(option =>
+            option.setName('category')
+                .setDescription('Category to choose from (optional)')
+                .addChoices(
+                    { name: 'Logic',        value: 'logic-puzzles'      },
+                    { name: 'What am I?',   value: 'what-am-i-riddles'  },
+                    { name: 'Who is it?',   value: 'who-is-it-riddles'  },
+                    { name: 'What am I?',   value: 'who-am-i-riddles'   },
+                    { name: 'Math',         value: 'math-riddles'       },
+                    { name: 'Best',         value: 'best-riddles'       },
+                    { name: 'Adult',        value: 'riddles-for-adults' },
+                    { name: 'Difficult',    value: 'difficult-riddles'  },
+                    { name: 'Brain Teaser', value: 'brain-teasers'      },
+        ))
+    ,
+   
+    initialize()
     {
-        const embed = new EmbedBuilder().setColor(Colors.Orange);
-        
-        puzzles.push(new PuzzleLibrary('logic-puzzles', embed, 10));
-        puzzles.push(new PuzzleLibrary('what-am-i-riddles', embed, 3));
-        puzzles.push(new PuzzleLibrary('who-is-it-riddles', embed, 3));
-        puzzles.push(new PuzzleLibrary('who-am-i-riddles', embed, 3));
-        puzzles.push(new PuzzleLibrary('math-riddles', embed, 17));
-        
-        puzzles.push(new PuzzleLibrary('best-riddles', embed, 10));
-        puzzles.push(new PuzzleLibrary('riddles-for-adults', embed, 12));
-        puzzles.push(new PuzzleLibrary('difficult-riddles', embed, 17));
-
-        puzzles.push(new PuzzleLibrary('brain-teasers', embed, 29));
-
-        return true;
+        for (const key in puzzleMap)
+            puzzles.push(new PuzzleLibrary(key, new EmbedBuilder().setColor(Colors.Orange), puzzleMap[key]));
     },
 
-	interact : async function ({ options }) 
+	async interact({ options }) 
     {
         switch (options.getString('category') || 'puzzle') {
             default:
@@ -82,28 +69,8 @@ module.exports =
         }
     },
 
-    buttonPress : function(cmd, i) 
+    buttonPress(interaction) 
     {
-        cmd = cmd.split('-')[0];
-        switch (cmd) {
-            case 'logic':
-                return puzzles[0].interact(i)
-            case 'what':
-                return puzzles[1].interact(i)
-            case 'who':
-                return puzzles[2].interact((cmd.split('-')[1] !== 'is') + 2);
-                // if(cmd.split('-')[1] === 'is') return puzzles[2].interact(i)
-                // else return puzzles[3].interact(i)
-            case 'math':
-                return puzzles[4].interact(i)
-            case 'best':
-                return puzzles[5].interact(i)
-            case 'riddles':
-                return puzzles[6].interact(i)
-            case 'difficult':
-                return puzzles[7].interact(i)
-            case 'brain':
-                return puzzles[7].interact(i)
-        }
+        puzzles[Object.keys(puzzleMap).indexOf(interaction.customId.split(':')[0])].interact(interaction);
     }
 };

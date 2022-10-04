@@ -10,20 +10,22 @@ var channel;
 
 class DailyTips 
 {
-    static initialize(guild, { dt_page, dt_index }) 
+    static initialize() 
     {
-        page = dt_page;
-        tipIndex = dt_index;
-        channel = guild.channels.cache.get('740552730250313809'); 
-
-        const rule = new RecurrenceRule();
-        rule.hour = 12;
-        rule.minute = 0;
-        rule.tz = 'Etc/UTC';
-        
-        scheduleJob(rule, () => {
-            const DailyTips = require("./dailytips");
-            DailyTips.dailyTip();
+        process.conn.query(`SELECT * FROM sherbot WHERE id = '${process.guild.id}'`, async (err, res) => {
+            page = res[0].dt_page;
+            tipIndex = res[0].dt_index;
+            channel = process.guild.channels.cache.get('740552730250313809'); 
+    
+            const rule = new RecurrenceRule();
+            rule.hour = 12;
+            rule.minute = 0;
+            rule.tz = 'Etc/UTC';
+            
+            scheduleJob(rule, () => {
+                const DailyTips = require("./dailytips");
+                DailyTips.dailyTip();
+            });
         });
     }
 

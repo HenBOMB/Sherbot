@@ -1,6 +1,5 @@
-module.exports =
-{
-    tick : async function(message)
+module.exports = {
+    async tick(message)
     {
         if(!(message.member?.id === process.ownerid)) return
         if(message.content.length < 3 || message.member == null) return false;

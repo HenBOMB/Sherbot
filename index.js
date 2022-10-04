@@ -2,15 +2,15 @@ const fs = require("fs");
 
 const mysql = require('mysql');
 
-const { Collection, Client, GatewayIntentBits, EmbedBuilder, Partials, Colors } = require('discord.js');
+const { Collection, Client, GatewayIntentBits, EmbedBuilder, Partials, Colors, REST, Routes } = require('discord.js');
 
-const { DiscordInteractions } = require("slash-commands");
-
-const { token, publicKey, db_settings, db_name } = require('./config.json');
+const { token, dbSettings, dbName, appId, guildId, clientId } = require('./config.json');
 
 // ? // // // // // // // // // // // // // // // // // // // // //
 
-const connection = mysql.createConnection(db_settings);
+const connection = mysql.createConnection(dbSettings);
+
+const rest = new REST({ version: '10' }).setToken(token);
 
 const client = new Client({
 	intents: [
@@ -23,19 +23,15 @@ const client = new Client({
 	partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
-const interaction = new DiscordInteractions({
-	applicationId: "712429527321542777",
-	authToken: token,
-	publicKey,
-});
+// ? // // // // // // // // // // // // // // // // // // // // //
 
-client.interactions = [];
+client.buttons = new Collection();
 
 client.features = new Collection();
 
 client.commands = new Collection();
 
-const refreshSlashCommands = false;
+const registerSlashCommands = false;
 
 const welcomes = fs.readFileSync("./data/welcomes.txt", 'utf8').split("\n");
 
@@ -77,7 +73,7 @@ connection.connect((err, args) => {
 
 	process.conn = connection;
 
-	connection.query(`USE ${db_name}`, () => {
+	connection.query(`USE ${dbName}`, () => {
 		console.log("Connected to database");
 		console.log("\n\nSherbot");
 		client.login(token).then(() => console.log(" ✓ Bot online"));
@@ -88,39 +84,49 @@ client.once('ready', async () => {
 	// ? Set env variables
 
 	process.ownerid = '348547981253017610';
-	process.guild = await client.guilds.fetch('670107546480017409');
+	process.guild = await client.guilds.fetch(guildId);
 	process.logChannel = await process.guild.channels.fetch('1026319776630456421');
 
-	client.user.setPresence({activities: [{ name: 'Sherlock', type: 'WATCHING'}], status: 'online' });
+	// client.user.setPresence({activities: [{ name: 'Sherlock', type: 'WATCHING'}], status: 'online' });
 
-	// ? Load
+	// ? Initializing
+
 	const feature_files = fs.readdirSync('./features').filter(file => file.endsWith('.js') && !file.startsWith('_'));
-	const command_files = fs.readdirSync('./commands').filter(file => file.endsWith('.js') && !file.startsWith('_'));
-	const failed = [];
+	
+	console.log('\n! Features');
 
-	// ? Delete all existing slash commands
-
-	if(refreshSlashCommands)
+	for (const file of feature_files)
 	{
-		const slashCommands = await interaction.getApplicationCommands(process.guild.id);
-		await Promise.all(slashCommands.map(cmd => interaction.deleteApplicationCommand(cmd.id, process.guild.id)))
-		console.log('\n! Refreshed slash commands');
+		const name = file.slice(0,-3);
+		try 
+		{
+			const module = require(`./features/${file}`);
+			if(module.initialize) await module.initialize();
+			client.features.set(name, module);
+			console.log(`   ✓ ${name}`);
+		} 
+		catch (err) 
+		{
+			console.log(`   ✗ ${name}`);
+			console.log(`      ${err.toString()}`)
+		}
 	}
 
 	console.log('\n! Commands');
+	
+	const slashCommands = {};
+	const command_files = fs.readdirSync('./commands').filter(file => file.endsWith('.js') && !file.startsWith('_'));
 	
 	for (const file of command_files)
 	{
 		const command = require(`./commands/${file}`);
 		const name = file.slice(0,-3);
 
-		// ? Set the name to be the same as the script name
-		command.name = name;
+		client.commands.set(name, command);
 
 		try 
 		{
-			if(command.initialize && command.initialize(client)) 
-				client.interactions.push(name);
+			if(command.initialize) await command.initialize(client)
 
 			console.log(`   ✓ ${name}`);
 
@@ -128,74 +134,65 @@ client.once('ready', async () => {
 			if(command.interact === undefined)
 			{
 				console.log(`       ✗ interact not found`);
-				continue;
 			}
 
 			// ? Validate slash command
-			if(command.description === undefined)
+			if(!command.data)
 			{
-				console.log(`       ✗ description not found`);
+				console.log(`       ✗ data not found`);
+			}
+
+			if(command.interact === undefined || !command.data)
+			{
 				continue;
 			}
 
 			command.available = true;
 
-			// ? Create slash command
+			// ? Register slash command
 
-			if(refreshSlashCommands)
+			if(registerSlashCommands)
 			{
-				// TODO This will get rate limited if abused
-				await interaction
-					.createApplicationCommand({
-						name: command.name,
-						description: command.description,
-						options: command.options,
-					}, command.guildid || process.guild.id)
-					.then(cmd => {
-						if(cmd.retry_after)
-							console.log(`       ! ${cmd.message} (${cmd.retry_after})`);
-						else if(cmd.errors)
-							console.log(`       ✗ ${JSON.stringify(cmd.errors, null, 2)}`);
-						else if(cmd.id)
-							console.log(`       /${cmd.name} ${cmd.options? cmd.options.map(v => v.required?`[${v.name}]`:`(${v.name})`).join(' ') : ''}`);
-						else
-							console.log(`       ? ${cmd.message})`);
-					})
-					.catch(console.error);
+				const id = command.guildId || guildId;
+				slashCommands[id] = slashCommands[id] || [];
+				slashCommands[id].push(command.data.toJSON());
+				console.log(`       / ${command.data.name}`);
 			}
 		} 
 		catch (err) 
 		{
-			failed.push(`${name}.js: ${err.toString()}`);
 			console.log(`   ✗ ${name}`);
+			console.log(`      ${err.toString()}`)
 		}
-
-		client.commands.set(name, command);
 	}
 
-	console.log('\n! Features');
-
-	connection.query(`SELECT * FROM sherbot WHERE id = '${process.guild.id}'`, (err, res) => {
-		for (const file of feature_files)
-		{
-			const name = file.slice(0,-3);
-			try 
-			{
-				const module = require(`./features/${file}`);
-				if(module.initialize) module.initialize(process.guild, res[0]);
-				client.features.set(name, module);
-				console.log(`   ✓ ${name}`);
-			} 
-			catch (err) 
-			{
-				failed.push(`${file}: ${err.toString()}`);
-				console.log(`   ✗ ${name}`);
-			}
+	if(registerSlashCommands)
+	{
+		for (const key in slashCommands) {
+			await rest
+				.put(Routes.applicationGuildCommands(clientId, key), { body: slashCommands[key] })
+				.then((data) => console.log(`\n! Registered ${data.length} slash commands`))
+				.catch(err => console.log(JSON.stringify(err, null, 2)));
 		}
+	}
 
-		console.log('\nFinished')
-		console.log(`${failed.length?'-':''} ${failed.join('\n- ')}`);
-	});
+	// ? Bots cannot use this endpoint (20001)
+	// await rest
+	// 	.put(Routes.guildApplicationCommandsPermissions(clientId, '643440133881856019', '1026656658400747552'), { body: 
+	// 		{
+	// 			"permissions": [
+	// 				{
+	// 					"id": "745778163740835920",
+	// 					"type": 1,
+	// 					"permission": false
+	// 				}
+	// 			]
+	// 		}	
+	// 	})
+	// 	.then((data) => console.log(`\n! Set ${data.length} command permissions.`))
+	// 	.catch(console.error);
+
+	console.log('\n ! Finished');
 });
 
 // ? // // // // // // // // // // // // // // // // // // // // //
@@ -271,28 +268,19 @@ client.on('interactionCreate', async (interaction) => {
 	if (interaction.isChatInputCommand())
 		return handleSlashCommands(interaction);
 
-	// ? Handle button presses
-	// TODO This is dodgy
+	if (interaction.isAutocomplete())
+		return handleAutocomplete(interaction);
 
-    try {
-		const arr = ['logic', 'what-am-i-riddles', 'who-is-it-riddles', 'who-am-i-riddles', 'math-riddles', 'best-riddles', 'riddles-for-adults', 'difficult-riddles', 'brain-teasers']
-			.filter(id => interaction.customId.includes(id));
-
-		if(arr.length > 0)
-		{
-			for (const v of client.interactions)
-				client.commands.get(v).buttonPress(arr[0], interaction);
-		}
-    }
-    catch(error) {
-		process.logError(error);
-    }
+	if (interaction.isButton())
+		return handleButton(interaction);
 });
+
+// ? // // // // // // // // // // // // // // // // // // // // //
+
+const sorryErrOcc = { content: '☹️ Sorry, an error occured. Please try again later.', ephemeral: true };
 
 async function handleSlashCommands(interaction)
 {
-	const sorryErrOcc = { content: '☹️ Sorry, an error occured. Please contact a <@&670114268858810369> or <@&742750595345022978>.', ephemeral: true };
-
 	if(!client.commands.has(interaction.commandName))
 	{
 		// ! Impossible to get here unless api changes
@@ -340,4 +328,33 @@ async function handleSlashCommands(interaction)
 		process.logError(error);
 		await interaction.editReply(sorryErrOcc);
 	} 
+}
+
+async function handleAutocomplete(interaction)
+{
+	await interaction.respond(
+		Object.keys(process.houses)
+			.map(v => v.name)
+		  	.filter(choice => choice.includes(interaction.options.getFocused()))
+		  	.map(choice => ({
+				name: choice[0].toUpperCase() + choice.slice(1).toLowerCase(),
+				value: choice.toLowerCase(),
+		}))
+	);
+}
+
+async function handleButton(interaction)
+{
+	const handler = client.commands.get(interaction.message.interaction.commandName);
+
+	if(!handler) return interaction.reply(sorryErrOcc);
+
+	try {
+		return handler.buttonPress(interaction);
+    }
+    catch(error) {
+		process.logError(error);
+    }
+
+	interaction.reply(sorryErrOcc);
 }
