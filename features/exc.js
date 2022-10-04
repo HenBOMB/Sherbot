@@ -35,7 +35,7 @@ module.exports =
             code = message.content.slice(3).replace(/^```[.\w]+|```$/gm, '')
         }
 
-        code = "(async () => { try{" + code + "} catch(error){ return {err} } })";
+        code = "(async () => { try{" + code + "} catch(err){ return {err} } })";
         
         try 
         {
