@@ -16,7 +16,7 @@ module.exports =
 
         if(cmd == 'sql')
         {
-            code = message.content.slice(4).replace(/^```+|```$/, '')
+            code = message.content.slice(4).replace(/^```[.\w]+|```$/gm, '')
             code = `
                 try{
                     return await new Promise(resolve => {
@@ -32,25 +32,24 @@ module.exports =
         }
         else
         {
-            code = message.content.slice(3).replace(/^```+|```$/, '')
+            code = message.content.slice(3).replace(/^```[.\w]+|```$/gm, '')
         }
 
-        code = "(async () => { try{" + code + "} catch(err){ return {err} } })";
+        code = "(async () => { try{" + code + "} catch(error){ return {err} } })";
         
         try 
         {
             const result = await eval(code)();
 
-            message.reactions.removeAll()
+            await message.reactions.removeAll();
 
             if(!result)
             {
-                await message.react('❎')
-                message.channel.send(`\`\`\`js\n${ JSON.stringify(result.err || result, null, 2) }\`\`\``);
+                await message.react('☑️');
                 return true;
             }
 
-            await message.react(result.errno||result.err?'❎':'✅')
+            await message.react(result.errno||result.err?'❎':'✅');
 
             if(result.errno)
             {
@@ -58,7 +57,7 @@ module.exports =
             }
             else
             {
-                message.channel.send(`\`\`\`js\n${ JSON.stringify(result.code || result, null, 2) }\`\`\``);
+                message.channel.send(`\`\`\`js\n${ JSON.stringify(result.err || result.code || result, null, 2) }\`\`\``);
             }
 
         }
