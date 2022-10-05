@@ -1,6 +1,14 @@
 const { Colors } = require('discord.js');
 
 module.exports = {
+
+    async verify(message)
+    {
+        await message.react('✅');
+        await message.member.roles.add('906128248193306635');
+        process.log('Verified', `✅ [Auto verified ${message.member}](${message.url})`, Colors.Green);
+    },
+
     async tick(message)
     {
         if(message.member == null) 
@@ -61,9 +69,10 @@ module.exports = {
         || content.includes("2.")
         || content.includes("3.")
         || content.includes("4.")
-        || content.includes("5.")) score += 1;
+        || content.includes("5."))
+            return this.verify(message);
         else
-            score /= 2;
+            score -= 2;
 
         // Negatives
 
@@ -82,10 +91,7 @@ module.exports = {
 
         if(score > 1)
         {
-            await message.react('✅');
-            await message.member.roles.add('906128248193306635');
-            await message.member.roles.add('670108333834764288');
-            process.log('Verified', `[Auto verified ${message.member}](${message.url}) ✅`, Colors.Green);
+            await this.verify(message);
         }
     },
 };

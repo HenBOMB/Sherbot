@@ -232,6 +232,8 @@ client.once('ready', async () => {
 client.on('guildMemberAdd', async member => {
 	if(member.guild.id != process.guild.id) return;
 	
+	await member.roles.add('670108333834764288');
+
 	const th = (() => {
 		switch (member.guild.memberCount.toString().slice(-1)) {
 			case 1:  return 'st';
@@ -330,7 +332,7 @@ async function handleSlashCommands(interaction)
 
 	// ? Run the command interaction
 
-	await interaction.deferReply({ephemeral: true });
+	await interaction.deferReply({ ephemeral: command.ephemeral || false });
 
 	try {
 		const out = (await command.interact(interaction));
@@ -346,7 +348,7 @@ async function handleSlashCommands(interaction)
 			embeds: out instanceof EmbedBuilder? [out] : []
 		};
 
-		options.ephemeral = command.ephemeral || out.ephemeral;
+		options.ephemeral = command.ephemeral || out.ephemeral || false;
 
 		await interaction.editReply(options);
 	} 
@@ -358,7 +360,7 @@ async function handleSlashCommands(interaction)
 
 async function handleButton(interaction)
 {
-	const id = interaction.message.interaction?.commandName || interaction.customId.split(':')[0]
+	const id = (interaction.message.interaction?.commandName || interaction.customId.split(':')[0]).split(' ')[0];
 
 	// ? puzzles ids are outdated, so make it the default
 	const command = client.commands.get(id) || client.commands.get('puzzle');
@@ -380,7 +382,7 @@ async function handleButton(interaction)
 			embeds: out instanceof EmbedBuilder? [out] : []
 		};
 		
-		return interaction.reply(options);
+		return interaction.reply(options).catch(process.logError);
     }
     catch(error) {
 		process.logError(error);
@@ -392,6 +394,8 @@ async function handleAutocomplete(interaction)
 {
 	switch (interaction.commandName) 
 	{
+		// TODO embed this in the command itself, like the other 2 handlers
+
 		case 'house':
 			return interaction.respond(
 				(await Houses.getNames())

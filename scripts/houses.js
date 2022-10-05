@@ -10,27 +10,22 @@ class Houses
     {
         if(!data) return;
 
-        // TODO This parsing is dodgy
+        if('name' in data) data.name = data.name.replace(/''/gm,"'");
 
-        if(data.name) data.name = data.name.replace(/''/gm,"'");
+        if('description' in data) data.description = data.description.replace(/''/gm,"'");
 
-        if(data.description) data.description = data.description.replace(/''/gm,"'");
+        if('motto' in data) data.motto = (data.motto || '').replace(/''/gm,"'");
 
-        if(data.motto) data.motto = (data.motto || '').replace(/''/gm,"'");
+        if('banner' in data) data.banner = (data.banner || '').replace(/''/gm,"'");
 
-        if(data.banner) data.banner = (data.banner || '').replace(/''/gm,"'");
+        if('xp' in data) data.xp = data.xp || 0;
 
-        if(data.xp === null) data.xp = 0;
+        if('invite_only' in data) data.invite_only = data.invite_only || false;
 
-        if(data.invite_only === null) data.invite_only = false;
+        if('members' in data) data.members = (data.members || '').split(',').filter(Boolean);
 
-        if(data.banned !== null && data.banned !== undefined) data.banned = data.banned.split(',').filter(Boolean);
-
-        else if(data.banned === null || data.banned === undefined) data.banned = [];
-
-        if(data.members !== null && data.members !== undefined) data.members = data.members.split(',').filter(Boolean);
-
-        else if(data.members === null || data.members === undefined) data.members = [];
+        // ? Not needed because owner doesn't require any parsing or correction
+        // if('owner' in data) data.owner = data.owner || '';
 
         return data;
     }
@@ -77,7 +72,6 @@ class Houses
         // query = query.slice(0, -2);
 
         object.xp = 0;
-        object.banned = '';
         object.members = '';
 
         const ids = Object.keys(object).join(',');

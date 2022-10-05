@@ -20,9 +20,11 @@ Do not panic, this has been reported and will soon be fixed!
 
 Please try again later.`
 
+// TODO 10/5 5:47am update slash commands
+
 module.exports = {
 
-    // TODO 10/5 5:47am update slash commands
+    ephemeral: true,
 
     data: new SlashCommandBuilder()
         .setName('house')
@@ -40,6 +42,12 @@ module.exports = {
                         .setAutocomplete(true)
                         .setRequired(true)
                 )
+                // .setNameLocalization({
+                //     'es-ES': 'Join and be part of a server House!'
+                // })
+                // .setDescriptionLocalization({
+                //     'es-ES': 'test'
+                // })
         )
         // ? leave
         .addSubcommand(
@@ -53,10 +61,10 @@ module.exports = {
                 .setName('rank')
                 .setDescription('List all Houses by ranking and show stats')
         )
-        // ? info (id)
+        // ? view (id)
         .addSubcommand(
             new SlashCommandSubcommandBuilder()
-                .setName('info')
+                .setName('view')
                 .setDescription('Display information about your house or another')
                 // ? id
                 .addStringOption(
@@ -129,25 +137,6 @@ module.exports = {
                         .setDescription('Reason why they got kicked (optional)')
                 )
         )
-        // ? ban [member] (reason)
-        // .addSubcommand(
-        //     new SlashCommandSubcommandBuilder()
-        //         .setName('ban')
-        //         .setDescription('Ban a member from your House')
-        //         //  ? member
-        //         .addUserOption(
-        //             new SlashCommandUserOption()
-        //                 .setName('member')
-        //                 .setDescription('Member to ban from the house')
-        //                 .setRequired(true)
-        //         )
-        //         // ? reason
-        //         .addStringOption(
-        //             new SlashCommandStringOption()
-        //                 .setName('reason')
-        //                 .setDescription('Reason why they got banned (optional)')
-        //         )
-        // )
         // ? invite [member] (message)
         .addSubcommand(
             new SlashCommandSubcommandBuilder()
@@ -221,6 +210,18 @@ module.exports = {
             return `🔍 No houses are available. Be the first to create one, hurry! \`/house create\``;
         }
 
+        if(options.getString('id'))
+        {
+            const house = await Houses.fetch(options.getString('id'));
+
+            if(!house)
+            {
+                return `❔ That House does not exist, please try one of the following options: \`${(await Houses.getNames()).join('\`, \`')}\``;
+            }
+
+            interaction.house = house;
+        }
+
         return this[options.getSubcommand()](interaction);
     },
 
@@ -235,37 +236,42 @@ module.exports = {
 
         switch (customId.split(':')[1]) 
         {
-            case 'acc':
+            case 'acc':{
                 const status = await Houses.edit(house, [...house.members, member.id]);
                 if(!status) return oopsErr;
                 await interaction.update({ embeds: [embed.setDescription(`Invite to ${house.name} accepted`).setColor(Colors.Green)], components: [] } );
                 setTimeout(message.delete, 5000);
                 break
+            }
 
-            case 'rej':
+            case 'rej':{
                 await interaction.update({ embeds: [embed.setDescription(`Invite to ${house.name} rejected`).setColor(Colors.Red)], components: [] } );
                 setTimeout(message.delete, 5000);
                 break
+            }
+
+            case 'join':{
+                const inHouse = await Houses.find(({ members }) => members.includes(member.id));
+                
+                // ? Leave the current house
+                if(inHouse)
+                {
+                    const status = await Houses.edit(inHouse, 'members', inHouse.members.filter(v => v !== member.id));
+                    if(!status) return oopsErr;
+                }
+
+                interaction.house = house;
+
+                return { content: await this.join(interaction), ephemeral: true };
+            }
         }
     },
 
-    async join({ options, member })
+    async join({ member, house })
     {
-        const house = await Houses.fetch(options.getString('id'));
-
-        if(!house)
-        {
-            return `❔ That House does not exist, please try one of the following options: \`${(await Houses.getNames()).join('\`, \`')}\``;
-        }
-
         if(house.owner === member.id)
         {
             return `🏠 You can't join a House that you own!`;
-        }
-
-        if(house.banned.includes(member.id))
-        {
-            return `⛔ Not so fast. You have been **banned** from this House.`;
         }
 
         if(house.members.includes(member.id))
@@ -282,15 +288,7 @@ module.exports = {
         
         if(!status) return oopsErr;
 
-        const name = `**${house.name}**`;
-
-        return [
-            `🚪 Hurray! You are now a part of ${name}. 🎉`,
-            `🏠 Marvelous! You have joined ${name} House. 🎊`,
-            `🚪 The door has opened to you. You have joined ${name}!`,
-            `🏠 The path to ${name} has been uncovered.. You have joined the House! 🎊`,
-            `🚪 Hurrah! You are now contained within ${name}! 🎉`,
-        ][Math.floor(Math.random() * 5)];
+        return this.getJoinMessage(house);
     },
 
     async leave({ member })
@@ -373,7 +371,7 @@ module.exports = {
         
         const reason = options.getString('reason') || 'unspecified';
         const dm = await target.user.createDM();
-        const available = await Houses.findAll(({ name, banned }) => name !== house.name && !banned.includes(member.id), 'name, banned');
+        const available = await Houses.findAll(({ name }) => name !== house.name, 'name');
 
         dm.send({ embeds: [ new EmbedBuilder()
             .setAuthor({ 
@@ -394,8 +392,6 @@ module.exports = {
         return `✅ Successfully kicked **${target}** from your House.`;
     },
 
-    // TODO /invite [member] (message)
-    // ! What if they invite a banned member?
     async invite({ options, member })
     {
         const house = await Houses.find(({ owner }) => owner === member.id, 'members, name, banner, owner');
@@ -414,7 +410,7 @@ module.exports = {
 
         if(target.user.bot)
         {
-            return `❌ You cannot invite a bot.`;
+            return `❌ You cannot invite <@${target.user.id}>, they're a bot!`;
         }
 
         const message = options.getString('message') || '';
@@ -467,14 +463,92 @@ module.exports = {
     },
 
     // TODO /rank
-    async rank({ })
+    async rank({ options })
     {
         return null;
     },
 
-    // TODO /info (id)
-    async info({ })
+    // TODO /view (id)
+    async view({ options, member })
     {
+        if(options.getString('id'))
+        {
+            const house = await Houses.fetch(options.getString('id'));
+
+            if(!house)
+            {
+                return `❔ That House does not exist, please try one of the following options: \`${(await Houses.getNames()).join('\`, \`')}\``;
+            }
+
+            // TODO Figure out how to not return and empheral response
+            return { 
+                // ephemeral: false, // ? This doesn't work
+                embeds : [ 
+                    new EmbedBuilder()
+                        .setAuthor({
+                            name: house.name,
+                            iconURL: house.banner
+                        })
+                        .addFields([
+                            {
+                                name: `Xp`,
+                                value: `‹\`${house.xp}\`›`,
+                                inline: true
+                            },
+                            {
+                                name: `Members`,
+                                value: `‹\`${house.members.length}\`›`,
+                                inline: true
+                            },
+                            {
+                                name: `Rank`,
+                                value: `‹\`1\`›`, // TODO This
+                                inline: true
+                            },
+                            {
+                                name: `Owner`,
+                                value: `<@${house.owner}>`
+                            }
+                        ])
+                        .setImage(house.banner)
+                        .setDescription(`
+ㅤ
+ㅤㅤ${house.description}
+
+ㅤㅤ*“${house.motto}”*
+ㅤ
+`)
+                        .setFooter({
+                            text: `/house view ${house.name}`,
+                        })
+                ],
+                components: [
+                    new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setLabel('Join House')
+                                .setCustomId(`house:join:${house.name.replace(/ +/g, '_')}`)
+                                .setStyle(ButtonStyle.Primary),
+                        )
+                ] 
+            };
+        }
+
+
         return null;
     },
+
+    // ? Utility commands
+
+    async getJoinMessage({ name })
+    {
+        name = `**${name}**`;
+        return [
+            `🚪 Hurray! You are now a part of ${name}. 🎉`,
+            `🏠 Marvelous! You have joined ${name}. 🎊`,
+            `🚪 The door has opened to you. You have joined ${name}!`,
+            `🏠 The path to ${name} has been uncovered.. You have joined the House! 🎊`,
+            `🚪 Hurrah! You are now contained within ${name}! 🎉`,
+        ][Math.floor(Math.random() * 5)];
+    }
 };

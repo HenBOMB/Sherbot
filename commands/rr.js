@@ -9,6 +9,8 @@ const {
 
 module.exports =
 {
+    ephemeral: true,
+
     data: new SlashCommandBuilder()
         .setName('rr')
         .setDescription('Reaction roles utility')
@@ -103,8 +105,10 @@ module.exports =
         });
     },
 
-    interact : async function({ options, channel })
+    interact : async function(interaction)
     {
+        const { options, channel } = interaction;
+
         const id = options.getString('id');
         const message = id? await channel.messages.fetch(id).catch(() => {}) : null;
         
