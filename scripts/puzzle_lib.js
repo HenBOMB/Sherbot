@@ -10,6 +10,20 @@ const icon = 'https://cdn3.iconfinder.com/data/icons/brain-games/1042/Puzzle-gre
 
 class PuzzleLibrary
 {
+    constructor(uri, embed, pages)
+    {
+        this.uri    = `https://www.riddles.com/${uri}?page=`;
+        this.id     = uri+':';
+        this.pages  = pages;
+        this.cache  = new Collection();
+
+        (async () => {
+            this.puzzle = await PuzzleUtils.fetchRiddle(this.uri, this.pages);
+            this.cache.set(this.puzzle.index, this.puzzle);
+			console.log(` # cached ${uri}`);
+        })();
+    }
+
     async fetch()
     {
         this.puzzle = await PuzzleUtils.fetchRiddle(this.uri, this.pages);
@@ -41,53 +55,44 @@ class PuzzleLibrary
     {
         const index = parseInt(interaction.customId.split(':')[1]);
         const embed = new EmbedBuilder().setColor(Colors.Orange);
-        var cache = this.cache.get(index);
+        
+        return new Promise(async resolve => {
+            var cache = this.cache.get(index);
 
-        if(!cache)
-        {
-            embed.setDescription('Fetching answer...');
-            
-            interaction.reply({ embeds: [embed], ephemeral: true  }).then(async i => {
-            
-                cache = await PuzzleUtils.findRiddle(this.uri, index);
-                this.cache.set(cache.index, cache);
-    
+            if(!cache)
+            {
+                embed.setDescription('Fetching answer...');
+                
+                interaction.reply({ embeds: [embed], ephemeral: true  }).then(async i => {
+                
+                    cache = await PuzzleUtils.findRiddle(this.uri, index);
+                    this.cache.set(cache.index, cache);
+        
+                    embed
+                        .setDescription(cache.answer)
+                        .setAuthor({
+                            name: cache.title, 
+                            icon_url: icon
+                        });
+        
+                    await interaction.editReply({ embeds: [embed], ephemeral: true }).catch(console.error);
+                    resolve();
+
+                }).catch(console.error);
+            }
+            else
+            {
                 embed
                     .setDescription(cache.answer)
                     .setAuthor({
                         name: cache.title, 
                         icon_url: icon
-                    });
-    
-                interaction.editReply({ embeds: [embed], ephemeral: true }).catch(console.error);
-           
-            }).catch(console.error);
-        }
-        else
-        {
-            embed
-                .setDescription(cache.answer)
-                .setAuthor({
-                    name: cache.title, 
-                    icon_url: icon
-                })
+                    })
 
-            interaction.reply({ embeds: [embed], ephemeral: true }).catch(console.error);
-        }
-    }
-
-    constructor(uri, embed, pages)
-    {
-        this.uri    = `https://www.riddles.com/${uri}?page=`;
-        this.id     = uri+':';
-        this.pages  = pages;
-        this.cache  = new Collection();
-
-        (async () => {
-            this.puzzle = await PuzzleUtils.fetchRiddle(this.uri, this.pages);
-            this.cache.set(this.puzzle.index, this.puzzle);
-			console.log(` # cached ${uri}`);
-        })();
+                await interaction.reply({ embeds: [embed], ephemeral: true }).catch(console.error);
+                resolve();
+            }
+        });
     }
 }
 

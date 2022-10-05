@@ -1,10 +1,11 @@
-const fs = require("fs");
+const { readFileSync, readdirSync } = require("fs");
 
 const mysql = require('mysql');
 
 const { Collection, Client, GatewayIntentBits, EmbedBuilder, Partials, Colors, REST, Routes } = require('discord.js');
 
-const { token, dbSettings, dbName, appId, guildId, clientId } = require('./config.json');
+const { token, dbSettings, dbName, localDir, guildId, clientId } = require('./config.json');
+const Houses = require("./scripts/houses");
 
 // ? // // // // // // // // // // // // // // // // // // // // //
 
@@ -33,33 +34,64 @@ client.commands = new Collection();
 
 const registerSlashCommands = false;
 
-const welcomes = fs.readFileSync("./data/welcomes.txt", 'utf8').split("\n");
+const welcomes = readFileSync("./data/welcomes.txt", 'utf8').split("\n");
 
-process.logError = async (error) => { 
+process.logError = async (error, message = null) => {
+	if(!error || (!error.code && !error.stack && !error.errno && !error.sqlMessage)) return;
+	if(process.catchErrorLogs)
+	{
+		process.catchErrorLogs.push(error);
+		return;
+	}
+
+	const isMsg = message && message.content && message.reply;
+	const reg = new RegExp(localDir, 'gm');
+
+	let stack;
+
+	try {
+		throw new Error('');
+	}
+	  catch (error) {
+		stack = error.stack || '';
+	}
+
 	const embed = new EmbedBuilder()
-		.setTitle(error.name)
-		.setDescription(`\`\`\`js\n${error.message}\`\`\`\n\`\`\`js\n${error.stack}\`\`\``)
 		.setColor(Colors.Red)
-		.setTimestamp();
+		.setDescription(
+`
+**${error.errno? 'SQL' : ''} ${error.code || error.name}** ${error.errno? `(${error.errno})` : ''}
+\`\`\`js
+${((error.message || error.sqlMessage).replace(reg,'')).slice(0, 1500)}
+\`\`\`
+**Stack**
+\`\`\`js
+${((error.stack || error.sql).replace(reg,'')).slice(0, 1500)}
+\`\`\`
+**Trace**
+\`\`\`js
+${(stack.replace(reg,'').split('\n').slice(2).join('\n')).slice(0, 900)}
+\`\`\`
+`);
+	if(isMsg) return message.reply({ embeds: [embed] });
 	await process.logChannel.send({ content: '<@348547981253017610>' });
-	process.logChannel.send({ embeds: [embed] });
+	return process.logChannel.send({ embeds: [embed] });
 };
 
 process.logWarn = async (description) => { 
 	const embed = new EmbedBuilder()
 		.setTitle('Warning')
 		.setDescription(description)
-		.setColor(Colors.Yellow)
-		.setTimestamp();
+		.setColor(Colors.Yellow);
 	process.logChannel.send({ embeds: [embed] });
 };
 
-process.log = async (title, description, color = Colors.Orange) => { 
+process.log = async (title, description, color = Colors.Orange, message = null) => { 
 	const embed = new EmbedBuilder()
 		.setTitle(title)
 		.setDescription(description)
-		.setColor(color)
-		.setTimestamp();
+		.setColor(color);
+	if(message) return message.reply({ embeds: [embed] });
 	process.logChannel.send({ embeds: [embed] });
 };
 
@@ -83,7 +115,7 @@ connection.connect((err, args) => {
 client.once('ready', async () => {
 	// ? Set env variables
 
-	process.ownerid = '348547981253017610';
+	process.ownerId = '348547981253017610';
 	process.guild = await client.guilds.fetch(guildId);
 	process.logChannel = await process.guild.channels.fetch('1026319776630456421');
 
@@ -91,7 +123,7 @@ client.once('ready', async () => {
 
 	// ? Initializing
 
-	const feature_files = fs.readdirSync('./features').filter(file => file.endsWith('.js') && !file.startsWith('_'));
+	const feature_files = readdirSync('./features').filter(file => file.endsWith('.js') && !file.startsWith('_'));
 	
 	console.log('\n! Features');
 
@@ -115,7 +147,7 @@ client.once('ready', async () => {
 	console.log('\n! Commands');
 	
 	const slashCommands = {};
-	const command_files = fs.readdirSync('./commands').filter(file => file.endsWith('.js') && !file.startsWith('_'));
+	const command_files = readdirSync('./commands').filter(file => file.endsWith('.js') && !file.startsWith('_'));
 	
 	for (const file of command_files)
 	{
@@ -226,7 +258,7 @@ client.on('guildMemberAdd', async member => {
 
 client.on('messageCreate', async message => {
     if(message.author.bot) return;
-	if(message.author.id === process.ownerid && message.content.includes('preview'))
+	if(message.author.id === process.ownerId && message.content.includes('preview'))
 	{
 		const channel = await message.member.user.createDM();
 		const embed = new EmbedBuilder()
@@ -278,6 +310,7 @@ client.on('interactionCreate', async (interaction) => {
 // ? // // // // // // // // // // // // // // // // // // // // //
 
 const sorryErrOcc = { content: '☹️ Sorry, an error occured. Please try again later.', ephemeral: true };
+const sorryUnavailable = { content: `☹️ Sorry, this command is currently unavailable. Please try again later.`, ephemeral: true };
 
 async function handleSlashCommands(interaction)
 {
@@ -292,26 +325,19 @@ async function handleSlashCommands(interaction)
 
 	if(!command.available)
 	{
-		return interaction.reply({ content: `☹️ Sorry, this command is currently unavailable. Please try again later!`, ephemeral: true });
+		return interaction.reply(sorryUnavailable);
 	}
 
-	if(command.roles && !interaction.member.roles.cache.hasAny(...command.roles))
-	{
-		return interaction.reply({ content: `☹️ Sorry! Only ${command.roles.map(v => interaction.member.guild.roles.cache.get(v)).join(', ')} may use this command.`, ephemeral: true });
-	}
-	
 	// ? Run the command interaction
 
-	await interaction.deferReply({ephemeral: command.ephemeral});
+	await interaction.deferReply({ephemeral: true });
 
 	try {
-		// TODO Theres a weird bug where if defer and ephmeral are true, then when returning an embed, it crashes.. (InteractionNotReplied)
-
 		const out = (await command.interact(interaction));
 
 		if(!out) 
 		{
-			await interaction.editReply(sorryErrOcc);
+			await interaction.editReply(sorryUnavailable);
 			return;
 		}
 
@@ -330,31 +356,65 @@ async function handleSlashCommands(interaction)
 	} 
 }
 
-async function handleAutocomplete(interaction)
-{
-	await interaction.respond(
-		Object.keys(process.houses)
-			.map(v => v.name)
-		  	.filter(choice => choice.includes(interaction.options.getFocused()))
-		  	.map(choice => ({
-				name: choice[0].toUpperCase() + choice.slice(1).toLowerCase(),
-				value: choice.toLowerCase(),
-		}))
-	);
-}
-
 async function handleButton(interaction)
 {
-	const handler = client.commands.get(interaction.message.interaction.commandName);
+	const id = interaction.message.interaction?.commandName || interaction.customId.split(':')[0]
 
-	if(!handler) return interaction.reply(sorryErrOcc);
+	// ? puzzles ids are outdated, so make it the default
+	const command = client.commands.get(id) || client.commands.get('puzzle');
+
+	if(!command.available)
+	{
+		return interaction.reply(sorryUnavailable);
+	}
+
+	if(!command) return interaction.reply(sorryErrOcc);
 
 	try {
-		return handler.buttonPress(interaction);
+		const out = await command.buttonPress(interaction);
+
+		if(!out) return;
+		
+		const options = out.content || out.embeds? out : { 
+			content: out instanceof EmbedBuilder? '' : out, 
+			embeds: out instanceof EmbedBuilder? [out] : []
+		};
+		
+		return interaction.reply(options);
     }
     catch(error) {
 		process.logError(error);
+		await interaction.reply(sorryErrOcc);
     }
+}
 
-	interaction.reply(sorryErrOcc);
+async function handleAutocomplete(interaction)
+{
+	switch (interaction.commandName) 
+	{
+		case 'house':
+			return interaction.respond(
+				(await Houses.getNames())
+				.filter(name => name.includes(interaction.options.getFocused()))
+				.map(name => ({
+					name: name[0].toUpperCase() + name.slice(1).toLowerCase(),
+					value: name,
+				}))
+			);
+		case 'rr':
+			return interaction.respond(
+				Object
+					.keys(process.reactionRoles)
+					.filter(choice => choice.includes(interaction.options.getFocused()))
+					.map(choice => ({
+						name: choice,
+						value: choice,
+					}))
+			);
+	}
+
+	return [{
+		name: sorryErrOcc.content,
+		value: '',
+	}]
 }

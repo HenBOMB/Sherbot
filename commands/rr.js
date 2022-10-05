@@ -1,116 +1,103 @@
-const { EmbedBuilder } = require('discord.js');
-
-const reactionRoles = { };
+const { 
+    EmbedBuilder, 
+    PermissionFlagsBits, 
+    SlashCommandBuilder, 
+    SlashCommandSubcommandBuilder, 
+    SlashCommandStringOption, 
+    SlashCommandRoleOption
+} = require('discord.js');
 
 module.exports =
 {
-    description: "Reaction roles utility.",
+    data: new SlashCommandBuilder()
+        .setName('rr')
+        .setDescription('Reaction roles utility')
 
-    options: [
-        {
-            type: 1,
-            name: "create",
-            description: "Creates a blank reaction role message.",
-            options: [
-                {
-                    type: 3,
-                    name: "title",
-                    description: "The title of the reaction roles message.",
-                    required: true
-                },
-                {
-                    type: 3,
-                    name: "description",
-                    description: "The description of the reaction roles message."
-                }
-            ]
-        },
-        {
-            type: 1,
-            name: "add",
-            description: "Adds a reaction role to the message.",
-            options: [
-                {
-                    type: 3,
-                    name: "id",
-                    description: "The reaction role message to target.",
-                    required: true
-                },
-                {
-                    type: 8,
-                    name: "role",
-                    description: "Role to give out.",
-                    required: true
-                },
-                {
-                    type: 3,
-                    name: "emoji",
-                    description: "Emoji used to react.",
-                    required: true
-                }
-            ]
-        },
-        {
-            type: 1,
-            name: "edit",
-            description: "Sets a new title or description of reaction role message.",
-            options: [
-                {
-                    type: 3,
-                    name: "id",
-                    description: "The reaction role message to target.",
-                    required: true
-                },
-                {
-                    type: 3,
-                    name: "title",
-                    description: "A new title.",
-                },
-                {
-                    type: 3,
-                    name: "description",
-                    description: "A new description.",
-                }
-            ]
-        }
-    ],
-
-    // ? @Director
-    roles: ['742750595345022978'],
-
-    ephemeral: true,
+        // ? create [title] [description]
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName('create')
+                .setDescription('Creates a blank reaction role message')
+                // ? title
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('title')
+                        .setDescription('The title of the reaction roles message')
+                        .setRequired(true)
+                )
+                // ? description
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('description')
+                        .setDescription('The description of the reaction roles message')
+                        .setRequired(true)
+                )
+        )
+        // ? add [id] [role] [emoji]
+        .addSubcommand(
+            new SlashCommandSubcommandBuilder()
+                .setName('add')
+                .setDescription('Adds a reaction role to the message')
+                // ? title
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('id')
+                        .setDescription('The title of the reaction roles message')
+                        .setRequired(true)
+                        .setAutocomplete(true)
+                )
+                // ? emoji
+                .addRoleOption(
+                    new SlashCommandRoleOption()
+                        .setName('role')
+                        .setDescription('Role to give out')
+                        .setRequired(true)
+                )
+                // ? role
+                .addStringOption(
+                    new SlashCommandStringOption()
+                        .setName('emoji')
+                        .setDescription('Emoji used as reaction')
+                        .setRequired(true)
+                        .setMaxLength(1)
+                )
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+    ,
 
     initialize: function(client)
     {
+        process.reactionRoles = { };
+
         process.conn.query(`SELECT * FROM reaction_roles`, (err, res) => {
+            process.logError(err);
             res.forEach(data => {
-                // ! Somtimes the first item is empty..
-                reactionRoles[data.id] = data.roles.split(',').filter(v => v.length > 3);
+                process.reactionRoles[data.id] = data.roles.split(',').filter(Boolean);
             });
         });
 
         client.on('messageDelete', async ({ id }) => {
-            if(!reactionRoles[id]) return;
+            if(!process.reactionRoles[id]) return;
             
-            delete reactionRoles[id];
+            delete process.reactionRoles[id];
         
-            process.conn.query(`DELETE FROM reaction_roles WHERE id = '${id}'`, (err, res) => { });
+            process.conn.query(`DELETE FROM reaction_roles WHERE id = '${id}'`, process.logError);
         });
         
         client.on('messageReactionAdd', async ({ message, me, emoji }, user) => {
-            if(me || !reactionRoles[message.id]) return;
+            if(me || !process.reactionRoles[message.id]) return;
             const i = message.reactions.cache.map(v => v.emoji.name).indexOf(emoji.name);
             if(i < 0) return;
-            const roleid = reactionRoles[message.id][i];
+            const roleid = process.reactionRoles[message.id][i];
             if(!roleid) return;
             (await message.guild.members.fetch(user.id)).roles.add(roleid);
         });
         
         client.on('messageReactionRemove', async ({ message, me, emoji }, user) => {
-            if(me || !reactionRoles[message.id]) return;
+            if(me || !process.reactionRoles[message.id]) return;
             const i = message.reactions.cache.map(v => v.emoji.name).indexOf(emoji.name);
             if(i < 0) return;
-            const roleid = reactionRoles[message.id][i];
+            const roleid = process.reactionRoles[message.id][i];
             if(!roleid) return;
             (await message.guild.members.fetch(user.id)).roles.remove(roleid);
         });
@@ -123,7 +110,7 @@ module.exports =
         
         if(id && !message) return `Invalid message ID: ${id}`;
 
-        if(message && !reactionRoles[id]) return `That ID does not belong to a reaction role message.`;
+        if(message && !process.reactionRoles[id]) return `That ID does not belong to a reaction role message.`;
 
         switch (options.getSubcommand()) {
             case 'create':
@@ -131,13 +118,13 @@ module.exports =
                     .setTitle(options.getString('title'))
                     .setDescription(options.getString('description')||'ㅤ');
                 const msg = await channel.send({ embeds: [embed] });
-                reactionRoles[msg.id] = [];
-                process.conn.query(`INSERT INTO reaction_roles (id,roles) VALUES ('${msg.id}','')`, (err, res) => { });
+                process.reactionRoles[msg.id] = [];
+                process.conn.query(`INSERT INTO reaction_roles (id,roles) VALUES ('${msg.id}','')`, process.logError);
                 return `Message created with ID: ${msg.id}`;
 
             case 'add':
-                reactionRoles[id].push(options.getRole('role').id);
-                process.conn.query(`UPDATE reaction_roles SET roles = '${reactionRoles[id].join(',')}'`, (err, res) => { });
+                process.reactionRoles[id].push(options.getRole('role').id);
+                process.conn.query(`UPDATE reaction_roles SET roles = '${process.reactionRoles[id].join(',')}'`, process.logError);
                 await message.react(options.getString('emoji'));
                 return `Added RR ${options.getRole('role')} with ${options.getString('emoji')}`;
 

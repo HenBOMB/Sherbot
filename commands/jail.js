@@ -3,7 +3,7 @@ const { PermissionFlagsBits } = require('discord.js')
 
 module.exports =
 {
-    description: "Sends a server member to jail.",
+    description: "Sends a server member to jail",
 
     options: [
         {
@@ -55,8 +55,6 @@ module.exports =
     // ? @Director and @Warden
     roles: ['742750595345022978', '670114268858810369'],
 
-    ephemeral: true,
-
     // ? https://discord.js.org/#/docs/discord.js/main/class/CommandInteractionOptionResolver
     // ? https://discord.js.org/#/docs/discord.js/main/class/ChatInputCommandInteraction
     interact : async function({ member, options })
@@ -70,6 +68,7 @@ module.exports =
 
         // ! If they are already in jail, skip
         if (await new Promise(resolve => process.conn.query(`SELECT * FROM jail WHERE id = '${inmate.id}'`, (err, res) => {
+            process.logError(err);
             resolve(res[0]?.id);
         })))
         {
@@ -88,6 +87,7 @@ module.exports =
 
         // ? Find any available cell
         const cell = await new Promise(resolve => process.conn.query(`SELECT * FROM jail`, async (err, res) => {
+            process.logError(err);
 
             // ? Get how many of the channels id match the cell id and add it
             res.forEach(db => {
@@ -151,6 +151,7 @@ module.exports =
 
         // ? Save to db and log message
         return new Promise(resolve => process.conn.query(`INSERT INTO jail (id,cell,arrival,departure,reason) VALUES ('${inmate.id}','${cell.id}','${Date.now()}','${duration.getTime()}','${reason}')`, (err, res) => {
+            process.logError(err);
             resolve({content: `${inmate.displayName} has been sentenced to ${format} in Jail!`, ephemeral: true});
         }));
     },

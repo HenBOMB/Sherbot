@@ -42,6 +42,7 @@ module.exports = {
         // ? Disable sending messages in other cells
         
         process.conn.query(`SELECT * FROM jail`, (err, res) => {
+            process.logError(err);
             const channels = getChannels();
             
             res.forEach(async info => {

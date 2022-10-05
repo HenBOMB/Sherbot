@@ -25,16 +25,21 @@ class Member
     {
         const q = `UPDATE users SET house = '${this.house}', msg_me = '${this.msg_me}', msg_ded = '${this.msg_ded}', msg_house = '${this.msg_house}' WHERE id = '${this.uid}'`;
         
-        return await new Promise(resolve => {
-            process.conn.query(q, (err, res) => {
-                // TODO untested
-                if(!res || res.affectedRows === 0)
+        return new Promise(resolve => {
+            process.conn.query(q, async (err, res) => {
+                process.logError(err);
+                if(!res && !res.affectedRows)
                 {
-                    process.conn.query(`INSERT INTO users (id) VALUES ('${this.id}')`, (err, res) => {});
-                    this.save();
-                    process.conn.query(q, (err, res) => { });
+                    process.conn.query(`INSERT INTO users (id) VALUES ('${this.id}')`, (err, res) => {
+                        process.logError(err);
+                        process.conn.query(q, process.logError);
+                        resolve();                        
+                    });
                 }
-                resolve();
+                else
+                {
+                    resolve();
+                }
             });
         })
     }
@@ -43,6 +48,7 @@ class Member
     {
         return await new Promise(resolve => {
             process.conn.query(`SELECT * FROM users WHERE id = '${this.id}'`, async (err, res) => {
+                process.logError(err);
                 this.house = res.house || "";
                 this.msg_me = res.msg_me || 0;
                 this.msg_ded = res.msg_ded || 0;

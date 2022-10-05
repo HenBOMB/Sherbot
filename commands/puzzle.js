@@ -69,8 +69,8 @@ module.exports =
         }
     },
 
-    buttonPress(interaction) 
+    async buttonPress(interaction) 
     {
-        puzzles[Object.keys(puzzleMap).indexOf(interaction.customId.split(':')[0])].interact(interaction);
+        await puzzles[Object.keys(puzzleMap).indexOf(interaction.customId.split(':')[0])].interact(interaction);
     }
 };

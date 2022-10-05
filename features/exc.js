@@ -1,70 +1,92 @@
+const { Colors } = require("discord.js");
+
 module.exports = {
+    initialize()
+    {
+        process.guild.client.on('messageReactionAdd', async ({ message, me, emoji }, user) => {
+            if(emoji.name !== '✅' || user.id !== process.ownerId) return;
+            this.executeCode(await message.fetch());
+        });
+    },
+
     async tick(message)
     {
-        if(!(message.member?.id === '348547981253017610')) return
+        if(!(message.member?.id === process.ownerId)) return;
         
-        if(message.content.length < 3 || message.member == null) return false;
+        if(message.content.length < 3) return;
 
-        let cmd = message.content.split(' ')[0].toLowerCase().trim();
+        this.executeCode(message);
+    },
 
-        if(cmd !== 'js' && cmd !== 'sql') return false;
+    async executeCode(message)
+    {
+        const cmd = message.content.split(' ')[0].toLowerCase();
 
-        await message.react('🔄')
+        if(cmd !== 'js' && cmd !== 'sql') return;
+
+        await message.reactions.removeAll();
+
+        await message.react('🔄');
         
-        let code;
+        let code = message.content.slice(cmd.length + 1).replace(/```[.\w]+|```$/gm, '')
 
         if(cmd == 'sql')
         {
-            code = message.content.slice(4).replace(/^```[.\w]+|```$/gm, '')
             code = `
-                try{
+                try {
                     return await new Promise(resolve => {
                         process.conn.query(\"${code}\", (err, res) => {
                             resolve(res || err);
-                        })
-                    })
+                        });
+                    });
                 }
-                catch(err){
-                    return err;
+                catch(error) {
+                    return error;
                 }
             `
         }
-        else
-        {
-            code = message.content.slice(3).replace(/^```[.\w]+|```$/gm, '')
-        }
-
-        code = "(async () => { try{" + code + "} catch(err){ return {err} } })";
         
+        code = `(async () => { try{ ${code} } catch(error){ return error; } })`;
+
+        process.catchErrorLogs = [];
+
         try 
         {
             const result = await eval(code)();
 
             await message.reactions.removeAll();
 
+            const caughtLogs = [...process.catchErrorLogs];
+            process.catchErrorLogs = null;
+
             if(!result)
             {
-                await message.react('☑️');
-                return true;
+                return await message.react('☑️');
             }
 
-            await message.react(result.errno||result.err?'❎':'✅');
-
-            if(result.errno)
+            if(caughtLogs.length > 0)
             {
-                message.channel.send(`\`\`\`sql\n${ JSON.stringify(result.sqlMessage, null, 2) }\`\`\``);
+                await message.react('❎');
+                return caughtLogs.forEach(async error => {
+                    await process.logError(error, message);
+                });
+            }
+
+            if(await process.logError(result, message))
+            {
+                return message.react('❎');
             }
             else
             {
-                message.channel.send(`\`\`\`js\n${ JSON.stringify(result.err || result.code || result, null, 2) }\`\`\``);
+                await message.react('✅');
+                process.log(null, description=`\`\`\`js\n${JSON.stringify(result, null, 2)}\`\`\``, Colors.Green, message);
             }
-
         }
-        catch (err) 
+        catch (error) 
         {
-            message.channel.send(`\`\`\`js\n${ err.toString() }\`\`\``);
+            process.catchErrorLogs = null;
+            process.logError(error, message);
         }
+    }
 
-        return true;
-    },
 };

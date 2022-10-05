@@ -1,3 +1,4 @@
+const Houses = require("../scripts/houses");
 const Member = require("../scripts/member");
 
 module.exports = {
@@ -9,9 +10,10 @@ module.exports = {
 
         if(member.house)
         {
-            const house = process.houses[member.house];
+            const house = await Houses.fetch(member.house);
             house.xp += Math.ceil(Math.random() * 10) + 20;
-            house.save();
+            await house.save();
+            
             member.msg_house++;
         }
 
@@ -19,9 +21,8 @@ module.exports = {
         if(channel.parentId === '852185049860276304' && content.match(/(?<=\|\|).{25,}(?=\|\|)/gm))
         {
             member.msg_ded++;
-            return member.save();
         }
 
-        member.save();
+        await member.save();
     },
 };

@@ -1,7 +1,7 @@
 module.exports = {
     async tick(message)
     {
-        if(!(message.member?.id === process.ownerid)) return
+        if(!(message.member?.id === process.ownerId)) return
         if(message.content.length < 3 || message.member == null) return false;
 
 		const args = message.content.toLowerCase().trim().split(' ');
