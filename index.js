@@ -5,13 +5,8 @@ const mysql = require('mysql');
 const { Collection, Client, GatewayIntentBits, EmbedBuilder, Partials, Colors, REST, Routes } = require('discord.js');
 
 const { token, dbSettings, dbName, localDir, guildId, clientId } = require('./config.json');
-const Houses = require("./scripts/houses");
 
 // ? // // // // // // // // // // // // // // // // // // // // //
-
-const connection = mysql.createConnection(dbSettings);
-
-const rest = new REST({ version: '10' }).setToken(token);
 
 const client = new Client({
 	intents: [
@@ -24,20 +19,36 @@ const client = new Client({
 	partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
+const connection = mysql.createConnection(dbSettings);
+
+const rest = new REST({ version: '10' }).setToken(token);
+
 // ? // // // // // // // // // // // // // // // // // // // // //
 
-client.buttons = new Collection();
+process.log = async (title, description, color = Colors.Orange, message = null) => { 
+	const embed = new EmbedBuilder()
+		.setTitle(title)
+		.setDescription(description)
+		.setColor(color);
+	if(message) return message.reply({ embeds: [embed] });
+	process.logChannel.send({ embeds: [embed] });
+};
 
-client.features = new Collection();
+process.logWarn = async (description) => { 
+	const embed = new EmbedBuilder()
+		.setTitle('Warning')
+		.setDescription(description)
+		.setColor(Colors.Yellow);
+	process.logChannel.send({ embeds: [embed] });
+};
 
-client.commands = new Collection();
+process.logError = async (error, message=null, pull=false) => {
 
-const registerSlashCommands = false;
+	if(!error || (!error.code && !error.stack && !error.errno && !error.sqlMessage)) 
+	{
+		return;
+	}
 
-const welcomes = readFileSync("./data/welcomes.txt", 'utf8').split("\n");
-
-process.logError = async (error, message = null) => {
-	if(!error || (!error.code && !error.stack && !error.errno && !error.sqlMessage)) return;
 	if(process.catchErrorLogs)
 	{
 		process.catchErrorLogs.push(error);
@@ -66,33 +77,25 @@ ${((error.message || error.sqlMessage).replace(reg,'')).slice(0, 1500)}
 \`\`\`
 **Stack**
 \`\`\`js
-${((error.stack || error.sql).replace(reg,'')).slice(0, 1500)}
-\`\`\`
-**Trace**
-\`\`\`js
-${(stack.replace(reg,'').split('\n').slice(2).join('\n')).slice(0, 900)}
-\`\`\`
-`);
-	if(isMsg) return message.reply({ embeds: [embed] });
+${((error.stack || error.sql).replace(reg,'')).slice(0, 1500)}`);
+// \`\`\`
+// **Trace**
+// \`\`\`js
+// ${(stack.replace(reg,'').split('\n').slice(2).join('\n')).slice(0, 900)}
+// \`\`\`
+// `);
+	if(isMsg) 
+	{
+		return message.reply({ embeds: [embed] });
+	}
+
+	if(pull)
+	{
+		return { embeds: [embed] };
+	}
+
 	await process.logChannel.send({ content: '<@348547981253017610>' });
 	return process.logChannel.send({ embeds: [embed] });
-};
-
-process.logWarn = async (description) => { 
-	const embed = new EmbedBuilder()
-		.setTitle('Warning')
-		.setDescription(description)
-		.setColor(Colors.Yellow);
-	process.logChannel.send({ embeds: [embed] });
-};
-
-process.log = async (title, description, color = Colors.Orange, message = null) => { 
-	const embed = new EmbedBuilder()
-		.setTitle(title)
-		.setDescription(description)
-		.setColor(color);
-	if(message) return message.reply({ embeds: [embed] });
-	process.logChannel.send({ embeds: [embed] });
 };
 
 // ? // // // // // // // // // // // // // // // // // // // // //
@@ -113,7 +116,11 @@ connection.connect((err, args) => {
 });
 
 client.once('ready', async () => {
-	// ? Set env variables
+
+	// ? Set variables
+
+	client.features = new Collection();
+	client.commands = new Collection();
 
 	process.ownerId = '348547981253017610';
 	process.guild = await client.guilds.fetch(guildId);
@@ -148,7 +155,8 @@ client.once('ready', async () => {
 	
 	const slashCommands = {};
 	const command_files = readdirSync('./commands').filter(file => file.endsWith('.js') && !file.startsWith('_'));
-	
+	const registerSlashCommands = process.argv[2] === '--refresh';
+
 	for (const file of command_files)
 	{
 		const command = require(`./commands/${file}`);
@@ -169,12 +177,12 @@ client.once('ready', async () => {
 			}
 
 			// ? Validate slash command
-			if(!command.data)
+			if(!command.builder && !command.builders)
 			{
-				console.log(`       ✗ data not found`);
+				console.log(`       ✗ builder not found`);
 			}
 
-			if(command.interact === undefined || !command.data)
+			if(command.interact === undefined || (!command.builder && !command.builders))
 			{
 				continue;
 			}
@@ -185,10 +193,22 @@ client.once('ready', async () => {
 
 			if(registerSlashCommands)
 			{
-				const id = command.guildId || guildId;
-				slashCommands[id] = slashCommands[id] || [];
-				slashCommands[id].push(command.data.toJSON());
-				console.log(`       / ${command.data.name}`);
+				const ids = command.guildIds || [ command.guildId || guildId ];
+				const builders = command.builders || [ command.builder ];
+
+				if(builders.length > 1)
+				{
+					client.commands.delete(name);
+				}
+
+				builders.forEach(builder => {
+					client.commands.set(builder.name, command);
+					ids.forEach(id => {
+						slashCommands[id] = slashCommands[id] || [];
+						slashCommands[id].push(builder.toJSON());
+					});
+					console.log(`       / ${builder.name}`);
+				});
 			}
 		} 
 		catch (err) 
@@ -243,6 +263,8 @@ client.on('guildMemberAdd', async member => {
 		}
 	})();
 
+	const welcomes = readFileSync("./data/welcomes.txt", 'utf8').split("\n");
+
 	const embed = new EmbedBuilder().setColor(member.guild.members.cache.get('712429527321542777').roles.color.color)
 		.setTitle(welcomes[Math.floor(Math.random() * welcomes.length)].replace(/{user}/g, member.user.username))
 		.setDescription(`🎊 Welcome ${member} to The Art of Deduction! 🎊\n Head on over to <#906149558801813605> to get verified!`)
@@ -260,6 +282,8 @@ client.on('guildMemberAdd', async member => {
 
 client.on('messageCreate', async message => {
     if(message.author.bot) return;
+	
+	// TODO
 	if(message.author.id === process.ownerId && message.content.includes('preview'))
 	{
 		const channel = await message.member.user.createDM();
@@ -311,19 +335,24 @@ client.on('interactionCreate', async (interaction) => {
 
 // ? // // // // // // // // // // // // // // // // // // // // //
 
+const Houses = require("./scripts/houses");
+
 const sorryErrOcc = { content: '☹️ Sorry, an error occured. Please try again later.', ephemeral: true };
+
 const sorryUnavailable = { content: `☹️ Sorry, this command is currently unavailable. Please try again later.`, ephemeral: true };
 
 async function handleSlashCommands(interaction)
 {
-	if(!client.commands.has(interaction.commandName))
+	const command = client.commands.get(interaction.commandName);
+
+	if(!command)
 	{
-		// ! Impossible to get here unless api changes
-		// ? Or if 2 interactions from separate places call the same interaction
+		// ! Impossible to get here unless
+		// ? The api changes
+		// ? There is an unregistered command
+		// ? If 2 interactions from separate places call the same interaction?
 		return interaction.reply({ content: `☹️ Sorry, that command does not exist.`, ephemeral: true });
 	}
-
-	const command = client.commands.get(interaction.commandName);
 
 	if(!command.available)
 	{

@@ -21,14 +21,15 @@ const puzzleMap = {
 
 // ? https://www.ahapuzzles.com/
 
-module.exports =
-{
-    data: new SlashCommandBuilder()
+module.exports = {
+
+    builder: new SlashCommandBuilder()
         .setName('puzzle')
         .setDescription('Get a random puzzle from 6+ different categories!')
         // ? puzzle (category)
         .addStringOption(option =>
-            option.setName('category')
+            option
+                .setName('category')
                 .setDescription('Category to choose from (optional)')
                 .addChoices(
                     { name: 'Logic',        value: 'logic-puzzles'      },
@@ -40,7 +41,8 @@ module.exports =
                     { name: 'Adult',        value: 'riddles-for-adults' },
                     { name: 'Difficult',    value: 'difficult-riddles'  },
                     { name: 'Brain Teaser', value: 'brain-teasers'      },
-        ))
+                )
+        )
     ,
    
     initialize()

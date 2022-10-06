@@ -1,6 +1,7 @@
 const { Colors } = require("discord.js");
 
 module.exports = {
+    
     initialize()
     {
         process.guild.client.on('messageReactionAdd', async ({ message, me, emoji }, user) => {

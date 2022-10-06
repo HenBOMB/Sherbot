@@ -11,7 +11,7 @@ module.exports =
 {
     ephemeral: true,
 
-    data: new SlashCommandBuilder()
+    builder: new SlashCommandBuilder()
         .setName('rr')
         .setDescription('Reaction roles utility')
 

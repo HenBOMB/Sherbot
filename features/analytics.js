@@ -1,6 +1,8 @@
 const Houses = require("../scripts/houses");
 const Member = require("../scripts/member");
 
+// TODO track users x / day, use separate table
+
 module.exports = {
     async tick({ author, channel, content })
     {

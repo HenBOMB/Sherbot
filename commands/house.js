@@ -22,11 +22,14 @@ Please try again later.`
 
 // TODO 10/5 5:47am update slash commands
 
+// TODO Need some moderation commands:
+// ? what if the house name is vulgar? yk, mods kinda have no control now
+
 module.exports = {
 
     ephemeral: true,
 
-    data: new SlashCommandBuilder()
+    builder: new SlashCommandBuilder()
         .setName('house')
         .setDescription('House utility commands')
         // ? join [id]
