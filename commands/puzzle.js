@@ -26,6 +26,7 @@ module.exports = {
     builder: new SlashCommandBuilder()
         .setName('puzzle')
         .setDescription('Get a random puzzle from 6+ different categories!')
+        .setDMPermission(false)
         // ? puzzle (category)
         .addStringOption(option =>
             option

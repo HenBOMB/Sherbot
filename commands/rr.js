@@ -7,14 +7,16 @@ const {
     SlashCommandRoleOption
 } = require('discord.js');
 
-module.exports =
-{
+module.exports = {
+
+    guildId: '670107546480017409',
+
     ephemeral: true,
 
     builder: new SlashCommandBuilder()
         .setName('rr')
         .setDescription('Reaction roles utility')
-
+        .setDMPermission(false)
         // ? create [title] [description]
         .addSubcommand(
             new SlashCommandSubcommandBuilder()

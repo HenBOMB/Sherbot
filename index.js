@@ -77,8 +77,8 @@ ${((error.message || error.sqlMessage).replace(reg,'')).slice(0, 1500)}
 \`\`\`
 **Stack**
 \`\`\`js
-${((error.stack || error.sql).replace(reg,'')).slice(0, 1500)}`);
-// \`\`\`
+${((error.stack || error.sql).replace(reg,'')).slice(0, 1500)}
+\`\`\``);
 // **Trace**
 // \`\`\`js
 // ${(stack.replace(reg,'').split('\n').slice(2).join('\n')).slice(0, 900)}
@@ -193,7 +193,7 @@ client.once('ready', async () => {
 
 			if(registerSlashCommands)
 			{
-				const ids = command.guildIds || [ command.guildId || guildId ];
+				const ids = command.guildIds || [ command.guildId ];
 				const builders = command.builders || [ command.builder ];
 
 				if(builders.length > 1)
@@ -204,6 +204,7 @@ client.once('ready', async () => {
 				builders.forEach(builder => {
 					client.commands.set(builder.name, command);
 					ids.forEach(id => {
+						id = id || 'global';
 						slashCommands[id] = slashCommands[id] || [];
 						slashCommands[id].push(builder.toJSON());
 					});
@@ -220,15 +221,26 @@ client.once('ready', async () => {
 
 	if(registerSlashCommands)
 	{
-		for (const key in slashCommands) {
-			await rest
-				.put(Routes.applicationGuildCommands(clientId, key), { body: slashCommands[key] })
-				.then((data) => console.log(`\n! Registered ${data.length} slash commands`))
-				.catch(err => console.log(JSON.stringify(err, null, 2)));
+		for (const key in slashCommands) 
+		{
+			if(key === 'global')
+			{
+				await rest
+					.put(Routes.applicationCommands(clientId), { body: slashCommands[key] })
+					.then((data) => console.log(`\n! Registered ${data.length} global slash commands`))
+					.catch(err => console.log(JSON.stringify(err, null, 2)));
+			}
+			else
+			{
+				await rest
+					.put(Routes.applicationGuildCommands(clientId, key), { body: slashCommands[key] })
+					.then((data) => console.log(`\n! Registered ${data.length} guild slash commands`))
+					.catch(err => console.log(JSON.stringify(err, null, 2)));
+			}
 		}
 	}
 
-	// ? Bots cannot use this endpoint (20001)
+	// ! Bots cannot use this endpoint (20001)
 	// await rest
 	// 	.put(Routes.guildApplicationCommandsPermissions(clientId, '643440133881856019', '1026656658400747552'), { body: 
 	// 		{

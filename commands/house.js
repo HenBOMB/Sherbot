@@ -20,18 +20,19 @@ Do not panic, this has been reported and will soon be fixed!
 
 Please try again later.`
 
-// TODO 10/5 5:47am update slash commands
-
 // TODO Need some moderation commands:
-// ? what if the house name is vulgar? yk, mods kinda have no control now
+// ? what if the house name is offensive? yk, mods kinda have no control now
 
 module.exports = {
+
+    guildId: '670107546480017409',
 
     ephemeral: true,
 
     builder: new SlashCommandBuilder()
         .setName('house')
         .setDescription('House utility commands')
+        .setDMPermission(false)
         // ? join [id]
         .addSubcommand(
             new SlashCommandSubcommandBuilder()
@@ -483,7 +484,7 @@ module.exports = {
                 return `❔ That House does not exist, please try one of the following options: \`${(await Houses.getNames()).join('\`, \`')}\``;
             }
 
-            // TODO Figure out how to not return and empheral response
+            // TODO Figure out how to not return an empheral response
             return { 
                 // ephemeral: false, // ? This doesn't work
                 embeds : [ 
@@ -536,7 +537,6 @@ module.exports = {
                 ] 
             };
         }
-
 
         return null;
     },
