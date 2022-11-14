@@ -21,6 +21,8 @@ const client = new Client({
 
 const connection = mysql.createConnection(dbSettings);
 
+const is_maintenence = process.argv.includes('--maintenence');
+
 const rest = new REST({ version: '10' }).setToken(token);
 
 // ? // // // // // // // // // // // // // // // // // // // // //
@@ -155,7 +157,7 @@ client.once('ready', async () => {
 	
 	const slashCommands = {};
 	const command_files = readdirSync('./commands').filter(file => file.endsWith('.js') && !file.startsWith('_'));
-	const registerSlashCommands = process.argv[2] === '--refresh';
+	const registerSlashCommands = process.argv.includes('--refresh');
 
 	for (const file of command_files)
 	{
@@ -166,7 +168,10 @@ client.once('ready', async () => {
 
 		try 
 		{
-			if(command.initialize) await command.initialize(client)
+			if(command.initialize) 
+			{
+				await command.initialize(client);
+			}
 
 			console.log(`   ✓ ${name}`);
 
@@ -193,7 +198,7 @@ client.once('ready', async () => {
 
 			if(registerSlashCommands)
 			{
-				const ids = command.guildIds || [ command.guildId ];
+				const ids = command.guildIds || [ command.guildId || 'global' ];
 				const builders = command.builders || [ command.builder ];
 
 				if(builders.length > 1)
@@ -204,7 +209,6 @@ client.once('ready', async () => {
 				builders.forEach(builder => {
 					client.commands.set(builder.name, command);
 					ids.forEach(id => {
-						id = id || 'global';
 						slashCommands[id] = slashCommands[id] || [];
 						slashCommands[id].push(builder.toJSON());
 					});
@@ -334,24 +338,60 @@ Some channels you might be interested in
 });
 
 client.on('interactionCreate', async (interaction) => {
+	if(is_maintenence && interaction.member.id !== process.ownerId)
+		return interaction.reply({ content: 'Sorry, Sherbot is currently under maintenence. Try again later.', ephemeral: true })
 
-	if (interaction.isChatInputCommand())
+	if(interaction.isChatInputCommand())
 		return handleSlashCommands(interaction);
 
-	if (interaction.isAutocomplete())
+	if(interaction.isAutocomplete())
 		return handleAutocomplete(interaction);
 
-	if (interaction.isButton())
+	if(interaction.isButton())
 		return handleButton(interaction);
+
+	return interaction.reply(sorryErrOcc);
 });
 
 // ? // // // // // // // // // // // // // // // // // // // // //
-
 const Houses = require("./scripts/houses");
 
 const sorryErrOcc = { content: '☹️ Sorry, an error occured. Please try again later.', ephemeral: true };
 
 const sorryUnavailable = { content: `☹️ Sorry, this command is currently unavailable. Please try again later.`, ephemeral: true };
+
+async function handleAutocomplete(interaction)
+{
+	switch (interaction.commandName) 
+	{
+		// TODO embed this in the command itself, like the other 2 handlers
+
+		case 'house':
+			return interaction.respond(
+				(await Houses.getNames())
+				.filter(name => name.includes(interaction.options.getFocused()))
+				.map(name => ({
+					name: name[0].toUpperCase() + name.slice(1).toLowerCase(),
+					value: name,
+				}))
+			);
+		case 'rr':
+			return interaction.respond(
+				Object
+					.keys(process.reactionRoles)
+					.filter(choice => choice.includes(interaction.options.getFocused()))
+					.map(choice => ({
+						name: choice,
+						value: choice,
+					}))
+			);
+	}
+
+	return [{
+		name: sorryErrOcc.content,
+		value: '',
+	}]
+}
 
 async function handleSlashCommands(interaction)
 {
@@ -399,67 +439,56 @@ async function handleSlashCommands(interaction)
 	} 
 }
 
-async function handleButton(interaction)
-{
-	const id = (interaction.message.interaction?.commandName || interaction.customId.split(':')[0]).split(' ')[0];
+async function handleButton(interaction) {
+	const [ type ] = interaction.customId.split('*');
+	
+	switch (type) {
+		case 'cmd':
+			return handleButtonCommand(interaction)
+	
+		default:
+			return interaction.reply(sorryErrOcc);
+	}
+}
 
-	// ? puzzles ids are outdated, so make it the default
-	const command = client.commands.get(id) || client.commands.get('puzzle');
+async function handleButtonCommand(interaction)
+{
+	const [ , id ] = interaction.customId.split('*');
+
+	const command = client.commands.get(id);
+
+	if(!command)
+	{
+		return interaction.reply(sorryErrOcc);
+	}
 
 	if(!command.available)
 	{
 		return interaction.reply(sorryUnavailable);
 	}
 
-	if(!command) return interaction.reply(sorryErrOcc);
+	await interaction.deferReply({ ephemeral: (command.isButtonEphemeral && command.isButtonEphemeral(interaction)) || false });
 
 	try {
 		const out = await command.buttonPress(interaction);
 
-		if(!out) return;
-		
+		if(!out) 
+		{
+			await interaction.editReply(sorryUnavailable);
+			return;
+		}
+
 		const options = out.content || out.embeds? out : { 
 			content: out instanceof EmbedBuilder? '' : out, 
 			embeds: out instanceof EmbedBuilder? [out] : []
 		};
-		
-		return interaction.reply(options).catch(process.logError);
-    }
-    catch(error) {
+
+		options.ephemeral = command.ephemeral || out.ephemeral || false;
+
+		await interaction.editReply(options);
+	} 
+	catch (error) {
 		process.logError(error);
-		await interaction.reply(sorryErrOcc);
-    }
-}
-
-async function handleAutocomplete(interaction)
-{
-	switch (interaction.commandName) 
-	{
-		// TODO embed this in the command itself, like the other 2 handlers
-
-		case 'house':
-			return interaction.respond(
-				(await Houses.getNames())
-				.filter(name => name.includes(interaction.options.getFocused()))
-				.map(name => ({
-					name: name[0].toUpperCase() + name.slice(1).toLowerCase(),
-					value: name,
-				}))
-			);
-		case 'rr':
-			return interaction.respond(
-				Object
-					.keys(process.reactionRoles)
-					.filter(choice => choice.includes(interaction.options.getFocused()))
-					.map(choice => ({
-						name: choice,
-						value: choice,
-					}))
-			);
-	}
-
-	return [{
-		name: sorryErrOcc.content,
-		value: '',
-	}]
+		await interaction.editReply(sorryErrOcc);
+	} 
 }

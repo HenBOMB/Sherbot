@@ -4,17 +4,14 @@ const {
 
 const PuzzleLibrary = require('../scripts/puzzle-library');
 
-const puzzleLib = new PuzzleLibrary('puzzle');
-
-// ? https://www.ahapuzzles.com/
+const puzzleLib = new PuzzleLibrary('riddle');
 
 module.exports = {
-
     builder: new SlashCommandBuilder()
-        .setName('puzzle')
-        .setDescription('Get a puzzle from 6+ different categories!')
+        .setName('riddle')
+        .setDescription('Do you think you’re observant enough to solve these tough riddles?')
         .setDMPermission(false)
-        // ? puzzle (category)
+        // ? riddle (category)
         .addStringOption(option =>
             option
                 .setName('category')
