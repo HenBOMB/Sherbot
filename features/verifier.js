@@ -1,24 +1,32 @@
 const { Colors } = require('discord.js');
 
+const verifiedRole = '906128248193306635';
+const verifiedChannel = '906149558801813605';
+
 module.exports = {
 
     async verify(message)
     {
         await message.react('✅');
-        await message.member.roles.add('906128248193306635');
+        await message.member.roles.add(verifiedRole);
         process.log('Verified', `✅ [Auto verified ${message.member}](${message.url})`, Colors.Green);
+    },
+
+    async initialize(client)
+    {
+        client.on('messageReactionAdd', async ({ message, me, emoji }, user) => {
+            if(emoji.name !== '✅') return;
+            if(message.channel.id !== verifiedChannel) return;
+            if(message.member.roles.cache.has(verifiedRole)) return;
+            await message.member.roles.add(verifiedRole);
+        });
     },
 
     async tick(message)
     {
-        if(message.member == null) 
-            return;
-
-        if(message.channel.id != '906149558801813605') 
-            return;
-
-        if(message.member.roles.cache.has('906128248193306635'))
-            return;
+        if(message.member == null) return;
+        if(message.channel.id != verifiedChannel) return;
+        if(message.member.roles.cache.has(verifiedRole)) return;
 
         let content = message.content.toLowerCase();
 

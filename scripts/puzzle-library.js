@@ -138,6 +138,7 @@ module.exports = class PuzzleLibrary {
      * @returns {Promise<{ title?: string | undefined, answer: string, category: string }>}
      */
     async get(id) {
+        // TODO: To save cache space, data that originates from .json files is simply redirected to its destination 'path': 'puzzle/example.json'
         if(this.cache[id])
         {
             return this.cache[id];
@@ -233,10 +234,12 @@ module.exports = class PuzzleLibrary {
                                 .setCustomId(puzzle.id)
                                 .setLabel('Show Answer')
                                 .setStyle(ButtonStyle.Danger),
-                            new ButtonBuilder()
-                                .setCustomId(`cmd*${this.name}*more:${puzzle.category}`)
-                                .setLabel('More')
-                                .setStyle(ButtonStyle.Secondary)
+                            // TODO: Make it so it appears after x amount of puzzles have been sent
+                            // Rename to 'More like this' (maybe)
+                            // new ButtonBuilder()
+                            //     .setCustomId(`cmd*${this.name}*more:${puzzle.category}`)
+                            //     .setLabel('More')
+                            //     .setStyle(ButtonStyle.Secondary)
                         )
                 ] 
             }
