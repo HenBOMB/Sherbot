@@ -82,13 +82,12 @@ module.exports = {
 
         client.on('messageDelete', async ({ id }) => {
             if(!process.reactionRoles[id]) return;
-            
             delete process.reactionRoles[id];
-        
             process.conn.query(`DELETE FROM reaction_roles WHERE id = '${id}'`, process.logError);
         });
         
         client.on('messageReactionAdd', async ({ message, me, emoji }, user) => {
+            if(user.bot) return;
             if(me || !process.reactionRoles[message.id]) return;
             const i = message.reactions.cache.map(v => v.emoji.name).indexOf(emoji.name);
             if(i < 0) return;
@@ -98,6 +97,7 @@ module.exports = {
         });
         
         client.on('messageReactionRemove', async ({ message, me, emoji }, user) => {
+            if(user.bot) return;
             if(me || !process.reactionRoles[message.id]) return;
             const i = message.reactions.cache.map(v => v.emoji.name).indexOf(emoji.name);
             if(i < 0) return;
@@ -141,5 +141,16 @@ module.exports = {
                 await message.edit({ embeds: [embed] });
                 return `Successfully edited RR message.`;
         }
-    }
+    },
+
+    async handleAutocomplete(interaction)
+    {
+        return Object
+            .keys(process.reactionRoles)
+            .filter(choice => choice.includes(interaction.options.getFocused()))
+            .map(choice => ({
+                name: choice,
+                value: choice,
+            }))
+    },
 };

@@ -28,7 +28,7 @@ module.exports = class PuzzleLibrary {
     constructor (name) {
         this.name = name; 
         this.config = require(`../data/configs/${name}.json`);
-        this.cache = {}; // TODO
+        this.cache = {};
     }
 
     /**
@@ -43,8 +43,17 @@ module.exports = class PuzzleLibrary {
         if(source.host === 'data')
         {
             const list = require(`../data/${this.name}/${category}.json`);
-            const index = Math.floor(Math.random() * list.length);
-            const id = generateId(this.name, source, category, index);
+
+            let index = Math.floor(Math.random() * list.length);
+            let id = generateId(this.name, source, category, index);
+            let counter = list.length;
+
+            while (this.cache[id] && counter > 0) 
+            {
+                index = Math.floor(Math.random() * list.length);
+                id = generateId(this.name, source, category, index);
+                counter--;
+            }
 
             this.cache[id] = { answer: list[index].answer, title: list[index].title, category };
 
@@ -88,9 +97,18 @@ module.exports = class PuzzleLibrary {
                 }
             }
 
-            const index = Math.floor(Math.random() * options.length);
-            const [ question, answer, title ] = options[index];
-            const id = generateId(this.name, source, _category, index);
+            let index = Math.floor(Math.random() * options.length);
+            let id = generateId(this.name, source, _category, index);
+            let counter = options.length;
+
+            while (this.cache[id] && counter > 0) 
+            {
+                index = Math.floor(Math.random() * options.length);
+                id = generateId(this.name, source, _category, index);
+                counter--;
+            }
+
+            let [ question, answer, title ] = options[index];
 
             this.cache[id] = { answer, title, category };
 
@@ -115,16 +133,22 @@ module.exports = class PuzzleLibrary {
             const page = Math.floor(Math.random()*pages);
             const document = await getDocument(url+`?page=${page}`);
             const panels = document.getElementsByClassName('panel-default');
-            const index = Math.floor(Math.random() * panels.length);
-            const panel = panels[index];
-            if(!panel)
+
+            let index = Math.floor(Math.random() * panels.length);
+            let id = generateId(this.name, source, category, page, index);
+            let counter = panels.length;
+
+            while (this.cache[id] && counter > 0) 
             {
-                console.log(panels);
+                index = Math.floor(Math.random() * panels.length);
+                id = generateId(this.name, source, category, page, index);
+                counter--;
             }
+
+            const panel = panels[index];
             const title = panel.querySelector('.panel-heading').querySelector('h3').textContent;
             const question = panel.querySelector('a').title.slice(8);
             const answer = panel.querySelector('.mar_top_15').textContent.trim().slice(8);
-            const id = generateId(this.name, source, category, page, index);
 
             this.cache[id] = { answer, title, category: category };
 

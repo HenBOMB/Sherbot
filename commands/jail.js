@@ -7,6 +7,8 @@ const {
 } = require('discord.js')
 
 module.exports = {
+    
+    available: false,
 
     guildId: '670107546480017409',
 

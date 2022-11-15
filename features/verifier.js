@@ -1,24 +1,57 @@
-const { Colors } = require('discord.js');
+const { Colors, EmbedBuilder } = require('discord.js');
 
 const verifiedRole = '906128248193306635';
 const verifiedChannel = '906149558801813605';
 
 module.exports = {
 
+    async sendWelcome(member, guild)
+    {
+		const channel = await member.user.createDM();
+		const embed = new EmbedBuilder()
+            .setAuthor({ name: 'Successfully Verified' })
+			.setTitle(`🎉 Welcome to the server ${member.user.username}! 🎉`)
+			.setThumbnail(member.displayAvatarURL())
+			.setDescription(`
+ㅤ
+*We're glad to have you 💖*
+
+Say hi :wave:
+• <#670111155263635476>
+
+Introduce yourself
+• <#670108903224377354>
+
+Some channels you might be interested in
+• <#678996795686256641>
+• <#679769341058744379>
+• <#679781702838910986>
+• <#714701731724001311>
+`)
+			.setImage('https://media.discordapp.net/attachments/1018969696445403217/1026395223028404324/unknown.png')
+			.setFooter({ text: guild.name })
+			.setTimestamp();
+		return await channel.send({ embeds: [embed] });
+    },
+
     async verify(message)
     {
         await message.react('✅');
         await message.member.roles.add(verifiedRole);
+        this.sendWelcome(message.member, message.guild);
         process.log('Verified', `✅ [Auto verified ${message.member}](${message.url})`, Colors.Green);
     },
 
     async initialize(client)
     {
-        client.on('messageReactionAdd', async ({ message, me, emoji }, user) => {
+        client.on('messageReactionAdd', async ({ message, emoji }, user) => {
+            if(user.bot) return;
             if(emoji.name !== '✅') return;
             if(message.channel.id !== verifiedChannel) return;
+            message = await message.fetch();
             if(message.member.roles.cache.has(verifiedRole)) return;
-            await message.member.roles.add(verifiedRole);
+            message.member.roles.add(verifiedRole);
+            this.sendWelcome(message.member, message.guild);
         });
     },
 

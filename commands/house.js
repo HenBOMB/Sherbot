@@ -25,6 +25,8 @@ Please try again later.`
 
 module.exports = {
 
+    available: false,
+    
     guildId: '670107546480017409',
 
     ephemeral: true,
@@ -203,6 +205,17 @@ module.exports = {
                 )
         )
     ,
+
+    async handleAutocomplete(interaction)
+    {
+        const houses = await Houses.getNames();
+        return houses
+            .filter(name => name.includes(interaction.options.getFocused()))
+            .map(name => ({
+                name: name[0].toUpperCase() + name.slice(1).toLowerCase(),
+                value: name,
+            }))
+    },
 
     // ? Interaction Handler
 	async interact(interaction)

@@ -12,7 +12,7 @@ module.exports = {
 
     builder: new SlashCommandBuilder()
         .setName('puzzle')
-        .setDescription('Get a puzzle from 6+ different categories!')
+        .setDescription(`Puzzles from ${Object.keys(puzzleLib.config).length} different categories!`)
         .setDMPermission(false)
         // ? puzzle (category)
         .addStringOption(option =>

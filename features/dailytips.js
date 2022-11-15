@@ -32,8 +32,7 @@ class DailyTips
 
     static async dailyTip()
     {
-        const member = channel.guild.members.cache.get('712429527321542777');
-        const embed = new EmbedBuilder().setColor(member.roles.color.color || member.roles.color.hexColor || "#ffffff");
+        const embed = new EmbedBuilder().setColor(process.botColor);
         const imgUrls = [];
 
         await new Promise(resolve => {
