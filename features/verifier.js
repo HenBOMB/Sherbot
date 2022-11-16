@@ -49,9 +49,10 @@ Some channels you might be interested in
             if(emoji.name !== '✅') return;
             if(message.channel.id !== verifiedChannel) return;
             message = await message.fetch();
-            if(message.member.roles.cache.has(verifiedRole)) return;
-            message.member.roles.add(verifiedRole);
-            this.sendWelcome(message.member, message.guild);
+            const member = await message.guild.members.fetch(message.author.id);
+            if(member.roles.cache.has(verifiedRole)) return;
+            member.roles.add(verifiedRole);
+            this.sendWelcome(member, message.guild);
         });
     },
 

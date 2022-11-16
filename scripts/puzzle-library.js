@@ -10,7 +10,8 @@ const { JSDOM } = jsdom;
 
 const randomItem = (array) => array[Math.floor(Math.random() * array.length)];
 
-function getDocument(url) {
+function getDocument(url) 
+{
     return new Promise(resolve => {
         got(url).then(({ body }) => {
             resolve(new JSDOM(body).window.document)
@@ -20,7 +21,8 @@ function getDocument(url) {
 
 // ? ID Format: command*host:path:category
 
-function generateId(name, source, category, ...extra) {
+function generateId(name, source, category, ...extra) 
+{
     return `cmd*${name}*${source.host}:${source.path? source.path : `-`}:${category}:${extra.join(':')}`;
 }
 
@@ -29,6 +31,7 @@ module.exports = class PuzzleLibrary {
         this.name = name; 
         this.config = require(`../data/configs/${name}.json`);
         this.cache = {};
+        this.maxCacheSize = 50;
     }
 
     /**
@@ -37,6 +40,13 @@ module.exports = class PuzzleLibrary {
      * @returns {Promise<{ title?: string | undefined, question: string, answer: string, id: string, category: string }>()}
      */
     async fetch(category = '') {
+        const _keys = Object.keys(this.cache);
+
+        if(_keys.length === this.maxCacheSize)
+        {
+            delete this.cache[_keys[Math.floor(Math.random() * this.maxCacheSize)]];
+        }
+
         category = category || randomItem(Object.keys(this.config));
         const source = randomItem(this.config[category]);
 
