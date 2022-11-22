@@ -2,14 +2,12 @@ const Houses = require("../scripts/houses");
 const Member = require("../scripts/member");
 
 // TODO track users x / day, use separate table
+const deductionId = '852185049860276304';
 
 module.exports = {
     tick({ author, channel, content })
     {
-        const deductionId = '852185049860276304';
-
         Member.load(author.id).then(async member => {
-
             member.msg_me++;
     
             if(member.house)
@@ -21,7 +19,6 @@ module.exports = {
                 member.msg_house++;
             }
     
-            // ? Deduction category
             if(channel.parentId === deductionId && content.match(/(?<=\|\|).{25,}(?=\|\|)/gm))
             {
                 member.msg_ded++;

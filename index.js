@@ -79,7 +79,7 @@ process.logWarn = async (description) => {
 	process.logChannel.send({ embeds: [embed] });
 };
 
-process.logError = async (error, message=null, pull=false) => {
+process.logError = async (error, message=null, pull=false, obj={}) => {
 
 	if(!error || (!error.code && !error.stack && !error.errno && !error.sqlMessage)) 
 	{
@@ -367,7 +367,10 @@ client.on('messageCreate', async message => {
 		try {
 			feature.tick(message);
 		} catch (error) {
-			process.logError(error);
+			process.logError(error, obj={
+				event: 'messageCreate',
+				content: message.content
+			});
 		}
 	});
 });
@@ -448,7 +451,11 @@ async function handleSlashCommands(interaction)
 		await interaction.editReply(options);
 	} 
 	catch (error) {
-		process.logError(error);
+		process.logError(error, obj={
+			function: 'handleSlashCommands',
+			command: `/${interaction.commandName}`,
+			content: message.content
+		});
 		await interaction.editReply(sorryErrOcc);
 	} 
 }
@@ -502,7 +509,11 @@ async function handleButtonCommand(interaction)
 		await interaction.editReply(options);
 	} 
 	catch (error) {
-		process.logError(error);
+		process.logError(error, obj={
+			function: 'handleButtonCommand',
+			id: interaction.customId,
+			content: message.content
+		});
 		await interaction.editReply(sorryErrOcc);
 	} 
 }
