@@ -5,11 +5,15 @@ const Member = require("../scripts/member");
 const deductionId = '852185049860276304';
 
 module.exports = {
-    tick({ author, channel, content })
+    tick({ author, channel, content, guild })
     {
+        if(guild.id !== '670107546480017409') return;
+
         Member.load(author.id).then(async member => {
             member.msg_me++;
-    
+            
+            // console.log(`${author.username}: ${content}`);
+
             if(member.house)
             {
                 const house = await Houses.fetch(member.house);

@@ -23,7 +23,7 @@ class Member
 
     async save()
     {
-        const q = `UPDATE users SET house = '${this.house}', msg_me = '${this.msg_me}', msg_ded = '${this.msg_ded}', msg_house = '${this.msg_house}' WHERE id = '${this.id}'`;
+        const q = `UPDATE users SET house = '${this.house}', msg_me = ${this.msg_me}, msg_ded = ${this.msg_ded}, msg_house = ${this.msg_house} WHERE id = '${this.id}'`;
         
         return new Promise(resolve => {
             process.conn.query(q, async (err, res) => {

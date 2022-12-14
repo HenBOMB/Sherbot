@@ -108,3 +108,4 @@ dist
 _*.js
 
 notes/
+test.js

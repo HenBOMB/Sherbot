@@ -143,8 +143,7 @@ client.once('ready', async () => {
 
 	client.features = new Collection();
 	client.commands = new Collection();
-
-	process.botColor = '12386304';
+	process.botColor = 0xBE0000;
 	process.ownerId = '348547981253017610';
 	process.guild = await client.guilds.fetch(guildId);
 	process.logChannel = await process.guild.channels.fetch('1026319776630456421');
@@ -350,9 +349,26 @@ client.on('guildMemberAdd', async member => {
 client.on('messageCreate', async message => {
     if(message.author.bot) return;
 
+	// if(message.author.id === '348547981253017610')
+	// {
+	// 	message.guild.channels.fetch('670111155263635476').then(channel => {
+	// 		channel.messages.fetch({ limit: 100, cache: false })
+	// 			.then(messages => {
+	// 				messages.each(message => {
+	// 					client.features.get('analytics').tick(message);
+	// 					console.log(message.author.username);
+	// 				});
+	// 			})
+	// 			.catch(console.error);
+	// 	})
+	// 	.catch(console.error);
+
+	// 	// console.log(message.guild.channels.cache.filter(channel => channel.parent).map(channel => channel.name));
+	// }
+
 	if(message.channel.isDMBased())
 	{
-		// if(message.author.username !== 'Hen')
+		// if(message.author.id !== '348547981253017610')
 		// {
 		// 	return;
 		// }
