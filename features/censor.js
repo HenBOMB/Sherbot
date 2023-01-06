@@ -8,6 +8,8 @@ module.exports = {
     {
         if(message.author.id !== process.ownerId) return;
 
+        return
+
         lineReader.eachLine('./data/bad_words.txt', (line, last) => {
             const words = message.content.split(' ');
 

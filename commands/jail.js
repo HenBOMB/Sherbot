@@ -12,38 +12,38 @@ module.exports = {
 
     guildId: '670107546480017409',
 
-    // builder: new SlashCommandBuilder()
-    //     .setName('jail')
-    //     .setDescription('Sends a server member to jail')
-    //     .setDMPermission(false)
-    //     .addUserOption(
-    //         new SlashCommandUserOption()
-    //             .setName('user')
-    //             .setDescription('User that will be sent to Jail')
-    //             .setRequired(true)
-    //     )
-    //     .addStringOption(option =>
-    //         option
-    //             .setName('duration')
-    //             .setDescription('For how long to keep the user in jail?')
-    //             .addChoices(
-    //                 { name: "1/8 day",  value: '3' },
-    //                 { name: "1/4 day",  value: '6' },
-    //                 { name: "1/2 day",  value: '12'},
-    //                 { name: "1 day",    value: 1 },
-    //                 { name: "2 days",   value: 2 },
-    //                 { name: "3 days",   value: 3 },
-    //                 { name: "4 days",   value: 4 },
-    //                 { name: "1 week",   value: 7 },
-    //                 { name: "2 weeks",  value: 14 },
-    //             )
-    //     )
-    //     .addBooleanOption(
-    //         new SlashCommandBooleanOption()
-    //             .setName('solitary')
-    //             .setDescription('Send this user to solitary confinement?')
-    //     )
-    // ,
+    builder: new SlashCommandBuilder()
+        .setName('jail')
+        .setDescription('Sends a server member to jail')
+        .setDMPermission(false)
+        .addUserOption(
+            new SlashCommandUserOption()
+                .setName('user')
+                .setDescription('User that will be sent to Jail')
+                .setRequired(true)
+        )
+        .addStringOption(option =>
+            option
+                .setName('duration')
+                .setDescription('For how long to keep the user in jail?')
+                .addChoices(
+                    { name: "1/8 day",  value: '3' },
+                    { name: "1/4 day",  value: '6' },
+                    { name: "1/2 day",  value: '12'},
+                    { name: "1 day",    value: 1 },
+                    { name: "2 days",   value: 2 },
+                    { name: "3 days",   value: 3 },
+                    { name: "4 days",   value: 4 },
+                    { name: "1 week",   value: 7 },
+                    { name: "2 weeks",  value: 14 },
+                )
+        )
+        .addBooleanOption(
+            new SlashCommandBooleanOption()
+                .setName('solitary')
+                .setDescription('Send this user to solitary confinement?')
+        )
+    ,
 
     options: [
         {
