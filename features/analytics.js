@@ -10,7 +10,7 @@ module.exports = {
         if(guild.id !== '670107546480017409') return;
 
         Member.load(author.id).then(async member => {
-            member.msg_me++;
+            member.count_me++;
             
             // console.log(`${author.username}: ${content}`);
 
@@ -20,12 +20,12 @@ module.exports = {
                 house.xp += Math.ceil(Math.random() * 10) + 20;
                 await house.save();
                 
-                member.msg_house++;
+                member.count_house++;
             }
     
             if(channel.parentId === deductionId && content.match(/(?<=\|\|).{25,}(?=\|\|)/gm))
             {
-                member.msg_ded++;
+                member.count_ded++;
             }
     
             await member.save();

@@ -63,7 +63,7 @@ module.exports = {
                         .setName('emoji')
                         .setDescription('Emoji used as reaction')
                         .setRequired(true)
-                        .setMaxLength(1)
+                        // .setMaxLength(1)
                 )
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
@@ -116,7 +116,10 @@ module.exports = {
         
         if(id && !message) return `Invalid message ID: ${id}`;
 
-        if(message && !process.reactionRoles[id]) return `That ID does not belong to a reaction role message.`;
+        if(message && !process.reactionRoles[id]) {
+            process.reactionRoles[id] = []
+        }
+        // if(message && !process.reactionRoles[id]) return `That ID does not belong to a reaction role message.`;
 
         switch (options.getSubcommand()) {
             case 'create':
@@ -130,7 +133,9 @@ module.exports = {
 
             case 'add':
                 process.reactionRoles[id].push(options.getRole('role').id);
-                process.conn.query(`UPDATE reaction_roles SET roles = '${process.reactionRoles[id].join(',')}'`, process.logError);
+                const roles = process.reactionRoles[id].join(',');
+                process.conn.query(`INSERT INTO reaction_roles (id, roles) VALUES ('${id}', '${roles}') ON DUPLICATE KEY UPDATE id = '${id}'`, process.logError);
+                process.conn.query(`UPDATE reaction_roles SET roles = '${roles}' WHERE id = '${id}'`, process.logError);
                 await message.react(options.getString('emoji'));
                 return `Added RR ${options.getRole('role')} with ${options.getString('emoji')}`;
 

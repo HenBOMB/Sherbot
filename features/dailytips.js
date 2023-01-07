@@ -12,7 +12,7 @@ class DailyTips
 {
     static initialize() 
     {
-        process.conn.query(`SELECT * FROM sherbot WHERE id = '${process.guild.id}'`, async (err, res) => {
+        process.conn.query(`SELECT tip_page, tip_index FROM sherbot WHERE id = '${process.guild.id}'`, async (err, res) => {
             process.logError(err);
             page = res[0].dt_page;
             tipIndex = res[0].dt_index;
@@ -82,7 +82,7 @@ class DailyTips
             });
         });
 
-        process.conn.query(`UPDATE sherbot SET dt_page = ${page}, dt_index = ${tipIndex} WHERE id = 670107546480017409`, process.logError);
+        process.conn.query(`UPDATE sherbot SET tip_page = ${page}, tip_index = ${tipIndex} WHERE id = 670107546480017409`, process.logError);
     }
 }
 

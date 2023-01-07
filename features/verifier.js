@@ -9,20 +9,18 @@ module.exports = {
     {
 		const channel = await member.user.createDM();
 		const embed = new EmbedBuilder()
-            .setAuthor({ name: 'Successfully Verified' })
 			.setTitle(`🎉 Welcome to the server ${member.user.username}! 🎉`)
 			.setThumbnail(member.displayAvatarURL())
 			.setDescription(`
-ㅤ
-*We're glad to have you 💖*
+*We're glad you're here 💖*
 
-Say hi :wave:
-• <#670111155263635476>
+This is a community for people who love solving mysteries and using their deduction skills to unravel the truth. 
 
-Introduce yourself
-• <#670108903224377354>
+Say hi <#670111155263635476> 👋
 
-Some channels you might be interested in
+Feel free to <#670108903224377354> to the rest of the community.
+
+Other channels you might be interested in:
 • <#678996795686256641>
 • <#679769341058744379>
 • <#679781702838910986>
@@ -66,11 +64,7 @@ Some channels you might be interested in
 
         if(content.includes("have you read the rules?") ) score += 4;
 
-        content = content.replace("have you read the rules?", "");
-        content = content.replace("why are you interested in deduction? ", "");
-        content = content.replace("how long have you been practicing deduction?", "");
-        content = content.replace("what is your favorite field of study?", "");
-        content = content.replace("what is your purpose of joining this server?", "");
+        content = content.replace(/.+?/g, "");
 
         const words = content.match(/[a-zA-Z]+/g).length;
         const characters = content.match(/[a-zA-Z]/g).length;
