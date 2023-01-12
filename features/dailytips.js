@@ -68,9 +68,7 @@ class DailyTips
                         page+=1;
                     }
                 
-                    embed.setImage(image).setDescription("<@&740693917514727431>");
-                    
-                    channel.send({ embeds: [embed] }).then(async msg => {
+                    channel.send({ content: '<@&740693917514727431>', embeds: [embed.setImage(image)] }).then(async msg => {
                         await msg.react('👍');
                         await msg.react('👎');
                     });
